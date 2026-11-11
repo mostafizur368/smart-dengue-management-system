@@ -120,13 +120,16 @@ const recommendedDoctorsBox = document.getElementById(
 
 if (recommendedDoctorsBox) {
     // Wait until doctors.js has finished loading approved doctors from Firestore.
-    if (window.doctorsReady && typeof window.doctorsReady.then === "function") {
-        try {
-            await window.doctorsReady;
-        } catch (doctorLoadError) {
-            console.error("Doctor list loading failed:", doctorLoadError);
-        }
+   if (window.doctorsReady && typeof window.doctorsReady.then === "function") {
+    try {
+        await Promise.race([
+            window.doctorsReady,
+            new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
+    } catch (doctorLoadError) {
+        console.error("Doctor list loading failed:", doctorLoadError);
     }
+}
 
     const doctorList = Array.isArray(window.doctors) ? window.doctors : [];
     console.log("Recommended doctor list:", doctorList);
@@ -588,7 +591,7 @@ async function loadDengueDataset() {
 
     try {
 
-        const response = await fetch("dataset/dataset.csv");
+       const response = await fetch("dataset.csv");
 
         const csvText = await response.text();
 

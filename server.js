@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 
 // Load .env from project root
 require("dotenv").config({
-   path.resolve(__dirname, ".env")
+    path: path.resolve(__dirname, ".env")
 });
 
 const app = express();

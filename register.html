@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration - Smart Dengue Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f7f5;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-card {
+            width: 100%;
+            max-width: 440px;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00897b;
+            margin-top: 0;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 7px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 22px;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            background: #00897b;
+            color: white;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00695c;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        a {
+            color: #00897b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-card">
+        <h1>🦟 Create Account</h1>
+        <p class="subtitle">Smart Dengue Management System</p>
+
+        <form id="register-form">
+            <label for="user-name">Full Name</label>
+            <input
+                type="text"
+                id="user-name"
+                required
+                autocomplete="name"
+                placeholder="Enter your full name"
+            >
+
+            <label for="user-email">Email Address</label>
+            <input
+                type="email"
+                id="user-email"
+                required
+                autocomplete="email"
+                placeholder="Enter your email"
+            >
+
+            <label for="user-password">Password</label>
+            <input
+                type="password"
+                id="user-password"
+                required
+                minlength="6"
+                autocomplete="new-password"
+                placeholder="At least 6 characters"
+            >
+
+            <label for="confirm-password">Confirm Password</label>
+            <input
+                type="password"
+                id="confirm-password"
+                required
+                minlength="6"
+                autocomplete="new-password"
+                placeholder="Enter password again"
+            >
+
+            <button type="submit">Register</button>
+            <p id="message" role="status"></p>
+        </form>
+
+        <p class="login-link">
+            Already have an account?
+            <a href="login.html">Login here</a>
+        </p>
+
+        <p class="login-link">
+            <a href="index.html">← Back to Home</a>
+        </p>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+    import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        updateProfile
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    import {
+        getFirestore,
+        doc,
+        setDoc,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
+        authDomain: "smart-dengue-management-system.firebaseapp.com",
+        projectId: "smart-dengue-management-system",
+        storageBucket: "smart-dengue-management-system.firebasestorage.app",
+        messagingSenderId: "164368465699",
+        appId: "1:164368465699:web:79fe552bea0b2bfc405696",
+        measurementId: "G-384ZPGT9NN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const registerForm = document.getElementById("register-form");
+    const message = document.getElementById("message");
+
+    registerForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const name = document.getElementById("user-name").value.trim();
+        const email = document.getElementById("user-email").value.trim();
+        const password = document.getElementById("user-password").value;
+        const confirmPassword = document.getElementById("confirm-password").value;
+
+        if (password !== confirmPassword) {
+            message.textContent = "Passwords do not match.";
+            message.style.color = "red";
+            return;
+        }
+
+        message.textContent = "Creating account...";
+        message.style.color = "#00897b";
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+            const user = userCredential.user;
+
+            await updateProfile(user, {
+                displayName: name
+            });
+
+            await setDoc(doc(db, "users", user.uid), {
+                name: name,
+                email: email,
+                role: "user",
+                createdAt: serverTimestamp()
+            });
+
+            message.textContent = "Registration successful! Redirecting to login...";
+            message.style.color = "green";
+
+            registerForm.reset();
+
+            
+setTimeout(() => {
+    const returnTo = new URLSearchParams(window.location.search).get("return");
+
+    if (returnTo === "appointment") {
+        window.location.href = "login.html?return=appointment";
+    } else {
+        window.location.href = "login.html";
+    }
+}, 1500);
+
+        } catch (error) {
+            console.error("Registration error:", error);
+
+            if (error.code === "auth/email-already-in-use") {
+                message.textContent = "This email is already registered.";
+            } else if (error.code === "auth/invalid-email") {
+                message.textContent = "Please enter a valid email address.";
+            } else if (error.code === "auth/weak-password") {
+                message.textContent = "Password must be at least 6 characters.";
+            } else {
+                message.textContent = "Registration failed: " + error.message;
+            }
+
+            message.style.color = "red";
+        }
+    });
+</script>
+
+
+
+</body>
+</html>

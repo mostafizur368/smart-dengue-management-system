@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <!-- Character Encoding -->
+    <meta charset="UTF-8">
+
+    <!-- Responsive Website -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO -->
+    <meta name="description" content="Smart Dengue Management System">
+
+    <!-- Website Title -->
+    <title>Smart Dengue Management System</title>
+
+    <!-- CSS File -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+
+    </script>
+    <script>
+        if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+    }
+    </script>
+    
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+
+<header>
+
+       <h1
+    data-en="🦟 Smart Dengue Management System"
+    data-bn="🦟 স্মার্ট ডেঙ্গু ব্যবস্থাপনা সিস্টেম">
+    🦟 Smart Dengue Management System
+</h1>
+
+<p
+    data-en="Early Detection | Recovery Guide | Prevention | Awareness"
+    data-bn="প্রাথমিক শনাক্তকরণ | সুস্থতার নির্দেশিকা | প্রতিরোধ | সচেতনতা">
+    Early Detection | Recovery Guide | Prevention | Awareness
+</p>
+    </header>
+    <hr>
+   <nav>
+    <ul>
+
+        <li><a href="#home" data-en="Home" data-bn="হোম">Home</a></li>
+
+        <li>
+            <a href="#about"
+               data-en="About Dengue"
+               data-bn="ডেঙ্গু সম্পর্কে">
+               About Dengue
+            </a>
+        </li>
+
+        <li>
+            <a href="#symptoms"
+               data-en="Symptoms"
+               data-bn="উপসর্গ">
+               Symptoms
+            </a>
+        </li>
+
+        <li>
+            <a href="#prevention"
+               data-en="Prevention"
+               data-bn="প্রতিরোধ">
+               Prevention
+            </a>
+        </li>
+
+        <li>
+            <a href="#recovery"
+               data-en="Recovery Guide"
+               data-bn="সুস্থতার নির্দেশিকা">
+               Recovery Guide
+            </a>
+        </li>
+
+<li>
+    <a href="#doctor-list"
+       data-en="Doctor List"
+       data-bn="ডাক্তারের তালিকা">
+       Doctor List
+    </a>
+</li>
+
+        <li>
+            <a href="#checker"
+               data-en="Symptom Checker"
+               data-bn="উপসর্গ যাচাই">
+               Symptom Checker
+            </a>
+        </li>
+
+        <li>
+            <a href="#contact"
+               data-en="Contact"
+               data-bn="যোগাযোগ">
+               Contact
+            </a>
+        </li>
+
+<li>
+    <a href="login.html"
+       data-en="User Login"
+       data-bn="ইউজার লগইন">
+       User Login
+    </a>
+</li>
+
+<li>
+    <a href="register.html"
+       data-en="Register"
+       data-bn="রেজিস্ট্রেশন">
+       Register
+    </a>
+</li>
+
+<li id="dashboard-link" style="display: none;">
+    <a href="user-dashboard.html"
+       data-en="My Dashboard"
+       data-bn="আমার ড্যাশবোর্ড">
+       My Dashboard
+    </a>
+</li>
+
+
+        <li>
+            <button id="languageBtn" onclick="toggleLanguage()">
+                বাংলা
+            </button>
+        </li>
+
+    </ul>
+</nav>
+
+    <section class="hero"id="home">
+            <div class="hero-text">
+         <h2
+    data-en="Protect Yourself From Dengue"
+    data-bn="ডেঙ্গু থেকে নিজেকে সুরক্ষিত রাখুন">
+    Protect Yourself From Dengue
+</h2>
+
+<p
+    data-en="Early detection and proper care can save lives."
+    data-bn="প্রাথমিক শনাক্তকরণ এবং সঠিক যত্ন জীবন বাঁচাতে পারে।">
+    Early detection and proper care can save lives.
+</p>
+<button 
+onclick="location.href='#checker'"
+    data-en="🔍 Check Symptoms"
+    data-bn="🔍 উপসর্গ যাচাই">
+    🔍 Check Symptoms
+</button>
+
+<button
+ 
+    onclick="document.getElementById('recovery').scrollIntoView()"
+    data-en="💊 Recovery Guide"
+    data-bn="💊 সুস্থতার নির্দেশিকা">
+    💊 Recovery Guide
+
+</button>
+            </div>
+            <div class="hero-image">
+                <img src="assets/images/dengue.png" alt="Dengue Awareness">
+                </div>
+        </section>
+        <section class="about" id="about">
+            <div class="about-text">
+    <h2
+    data-en="About Dengue"
+    data-bn="ডেঙ্গু সম্পর্কে">
+    About Dengue
+</h2>
+
+<p
+    data-en="Dengue is a viral disease spread by Aedes mosquitoes. It can cause high fever, severe headache, joint pain, and skin rash. Early diagnosis and proper treatment can reduce the risk of serious complications."
+    data-bn="ডেঙ্গু এডিস মশার মাধ্যমে ছড়ানো একটি ভাইরাসজনিত রোগ। এটি উচ্চ জ্বর, তীব্র মাথাব্যথা, জয়েন্টে ব্যথা এবং ত্বকে ফুসকুড়ি সৃষ্টি করতে পারে। প্রাথমিক শনাক্তকরণ এবং সঠিক চিকিৎসা গুরুতর জটিলতার ঝুঁকি কমাতে পারে।">
+    Dengue is a viral disease spread by Aedes mosquitoes. It can cause high fever, severe headache, joint pain, and skin rash. Early diagnosis and proper treatment can reduce the risk of serious complications.
+</p>
+                
+  <div class="about-container">
+     <div class="card">
+     <h3
+    data-en="🦟 What is Dengue?"
+    data-bn="🦟 ডেঙ্গু কী?">
+    🦟 What is Dengue?
+</h3>
+
+<p
+    data-en="Dengue is a mosquito-borne viral infection that affects millions of people every year."
+    data-bn="ডেঙ্গু একটি মশাবাহিত ভাইরাসজনিত সংক্রমণ, যা প্রতি বছর লক্ষ লক্ষ মানুষকে আক্রান্ত করে।">
+    Dengue is a mosquito-borne viral infection that affects millions of people every year.
+</p>
+        </div>
+
+        <div class="card">
+
+    <h3
+        data-en="🤒 Symptoms"
+        data-bn="🤒 উপসর্গ">
+        🤒 Symptoms
+    </h3>
+
+    <p
+        data-en="High fever, headache, joint pain, muscle pain, nausea and skin rash are common symptoms."
+        data-bn="উচ্চ জ্বর, মাথাব্যথা, জয়েন্টে ব্যথা, পেশিতে ব্যথা, বমি বমি ভাব এবং ত্বকে ফুসকুড়ি সাধারণ উপসর্গ।">
+        High fever, headache, joint pain, muscle pain, nausea and skin rash are common symptoms.
+    </p>
+
+</div>
+
+        <div class="card">
+
+    <h3
+        data-en="🛡️ Prevention"
+        data-bn="🛡️ প্রতিরোধ">
+        🛡️ Prevention
+    </h3>
+
+    <p
+        data-en="Keep your surroundings clean, remove stagnant water and use mosquito nets or repellents."
+        data-bn="আপনার আশপাশ পরিষ্কার রাখুন, জমে থাকা পানি সরিয়ে ফেলুন এবং মশারি বা মশা প্রতিরোধক ব্যবহার করুন।">
+        Keep your surroundings clean, remove stagnant water and use mosquito nets or repellents.
+    </p>
+
+</div>
+
+        <div class="card">
+
+    <h3
+        data-en="💊 Recovery"
+        data-bn="💊 সুস্থতা">
+        💊 Recovery
+    </h3>
+
+    <p
+        data-en="Drink plenty of fluids, take enough rest and follow your doctor's advice carefully."
+        data-bn="প্রচুর তরল পান করুন, পর্যাপ্ত বিশ্রাম নিন এবং চিকিৎসকের পরামর্শ সতর্কতার সাথে অনুসরণ করুন।">
+        Drink plenty of fluids, take enough rest and follow your doctor's advice carefully.
+    </p>
+
+</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+   <section class="symptoms" id="symptoms">
+
+    <h2
+        data-en="Common Dengue Symptoms"
+        data-bn="ডেঙ্গুর সাধারণ উপসর্গ">
+        Common Dengue Symptoms
+    </h2>
+
+    <p
+        data-en="If you experience these symptoms, consult a doctor immediately."
+        data-bn="এই উপসর্গগুলো দেখা দিলে দ্রুত একজন চিকিৎসকের পরামর্শ নিন।">
+        If you experience these symptoms, consult a doctor immediately.
+    </p>
+
+    <div class="symptom-container">
+
+        <!-- High Fever -->
+        <div class="symptom-card">
+
+            <h3
+                data-en="🤒 High Fever"
+                data-bn="🤒 উচ্চ জ্বর">
+                🤒 High Fever
+            </h3>
+
+            <p
+                data-en="Sudden high fever lasting 2–7 days."
+                data-bn="হঠাৎ উচ্চ জ্বর ২–৭ দিন পর্যন্ত স্থায়ী হতে পারে।">
+                Sudden high fever lasting 2–7 days.
+            </p>
+
+        </div>
+
+
+        <!-- Severe Headache -->
+        <div class="symptom-card">
+
+            <h3
+                data-en="🤕 Severe Headache"
+                data-bn="🤕 তীব্র মাথাব্যথা">
+                🤕 Severe Headache
+            </h3>
+
+            <p
+                data-en="Intense headache, especially behind the eyes."
+                data-bn="তীব্র মাথাব্যথা, বিশেষ করে চোখের পেছনে ব্যথা হতে পারে।">
+                Intense headache, especially behind the eyes.
+            </p>
+
+        </div>
+
+
+        <!-- Muscle Pain -->
+        <div class="symptom-card">
+
+            <h3
+                data-en="💪 Muscle Pain"
+                data-bn="💪 পেশি ও জয়েন্টে ব্যথা">
+                💪 Muscle Pain
+            </h3>
+
+            <p
+                data-en="Severe muscle and joint pain throughout the body."
+                data-bn="সারা শরীরে তীব্র পেশি ও জয়েন্টে ব্যথা হতে পারে।">
+                Severe muscle and joint pain throughout the body.
+            </p>
+
+        </div>
+
+
+        <!-- Skin Rash -->
+        <div class="symptom-card">
+
+            <h3
+                data-en="🔴 Skin Rash"
+                data-bn="🔴 ত্বকে ফুসকুড়ি">
+                🔴 Skin Rash
+            </h3>
+
+            <p
+                data-en="Red rashes may appear on different parts of the body."
+                data-bn="শরীরের বিভিন্ন অংশে লালচে ফুসকুড়ি দেখা দিতে পারে।">
+                Red rashes may appear on different parts of the body.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+<section class="prevention" id="prevention">
+
+    <h2
+    data-en="Dengue Prevention"
+    data-bn="ডেঙ্গু প্রতিরোধ">
+    Dengue Prevention
+</h2>
+
+<p
+    data-en="Follow these simple steps to reduce the risk of dengue infection."
+    data-bn="ডেঙ্গু সংক্রমণের ঝুঁকি কমাতে এই সহজ পদক্ষেপগুলো অনুসরণ করুন।">
+    Follow these simple steps to reduce the risk of dengue infection.
+</p>
+
+<div class="prevention-container">
+
+    <!-- Avoid Mosquito Bites -->
+    <div class="prevention-card">
+
+        <h3
+            data-en="🦟 Avoid Mosquito Bites"
+            data-bn="🦟 মশার কামড় এড়িয়ে চলুন">
+            🦟 Avoid Mosquito Bites
+        </h3>
+
+        <p
+            data-en="Wear full-sleeved clothes and use mosquito repellent to protect yourself."
+            data-bn="নিজেকে সুরক্ষিত রাখতে পুরো হাতা পোশাক পরুন এবং মশা প্রতিরোধক ব্যবহার করুন।">
+            Wear full-sleeved clothes and use mosquito repellent to protect yourself.
+        </p>
+
+    </div>
+
+
+    <!-- Keep Surroundings Clean -->
+    <div class="prevention-card">
+
+        <h3
+            data-en="🧹 Keep Surroundings Clean"
+            data-bn="🧹 আশপাশ পরিষ্কার রাখুন">
+            🧹 Keep Surroundings Clean
+        </h3>
+
+        <p
+            data-en="Keep your home and surroundings clean to prevent mosquito breeding."
+            data-bn="মশার বংশবিস্তার রোধ করতে আপনার বাড়ি ও আশপাশ পরিষ্কার রাখুন।">
+            Keep your home and surroundings clean to prevent mosquito breeding.
+        </p>
+
+    </div>
+
+
+    <!-- Remove Standing Water -->
+    <div class="prevention-card">
+
+        <h3
+            data-en="💧 Remove Standing Water"
+            data-bn="💧 জমে থাকা পানি সরিয়ে ফেলুন">
+            💧 Remove Standing Water
+        </h3>
+
+        <p
+            data-en="Empty water containers, flower pots, and old tires regularly."
+            data-bn="নিয়মিত পানির পাত্র, ফুলের টব এবং পুরোনো টায়ারে জমে থাকা পানি ফেলে দিন।">
+            Empty water containers, flower pots, and old tires regularly.
+        </p>
+
+    </div>
+
+
+    <!-- Use Mosquito Nets -->
+    <div class="prevention-card">
+
+        <h3
+            data-en="🛡️ Use Mosquito Nets"
+            data-bn="🛡️ মশারি ব্যবহার করুন">
+            🛡️ Use Mosquito Nets
+        </h3>
+
+        <p
+            data-en="Sleep under mosquito nets, especially during the rainy season."
+            data-bn="বিশেষ করে বর্ষাকালে মশারির নিচে ঘুমান।">
+            Sleep under mosquito nets, especially during the rainy season.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- ===============================
+     RECOVERY GUIDE
+================================ -->
+
+<section class="recovery" id="recovery">
+
+    <h2
+        data-en="Recovery Guide"
+        data-bn="সুস্থতার নির্দেশিকা">
+        Recovery Guide
+    </h2>
+
+    <p
+        data-en="Follow these guidelines to support your recovery from dengue."
+        data-bn="ডেঙ্গু থেকে সুস্থ হতে এই নির্দেশিকাগুলো অনুসরণ করুন।">
+        Follow these guidelines to support your recovery from dengue.
+    </p>
+
+    <div class="recovery-container">
+
+
+        <!-- Drink Plenty of Fluids -->
+        <div class="recovery-card">
+
+            <h3
+                data-en="💧 Drink Plenty of Fluids"
+                data-bn="💧 প্রচুর তরল পান করুন">
+                💧 Drink Plenty of Fluids
+            </h3>
+
+            <p
+                data-en="Drink plenty of water, oral saline, soups, and other healthy fluids to help prevent dehydration."
+                data-bn="পানিশূন্যতা এড়াতে প্রচুর পানি, ওরস্যালাইন, স্যুপ এবং অন্যান্য স্বাস্থ্যকর তরল পান করুন।">
+                Drink plenty of water, oral saline, soups, and other healthy fluids to help prevent dehydration.
+            </p>
+
+        </div>
+
+
+        <!-- Get Enough Rest -->
+        <div class="recovery-card">
+
+            <h3
+                data-en="🛌 Get Enough Rest"
+                data-bn="🛌 পর্যাপ্ত বিশ্রাম নিন">
+                🛌 Get Enough Rest
+            </h3>
+
+            <p
+                data-en="Get enough sleep and avoid unnecessary physical activities while recovering."
+                data-bn="সুস্থ হওয়ার সময় পর্যাপ্ত ঘুমান এবং অপ্রয়োজনীয় শারীরিক পরিশ্রম এড়িয়ে চলুন।">
+                Get enough sleep and avoid unnecessary physical activities while recovering.
+            </p>
+
+        </div>
+
+
+        <!-- Eat Healthy Food -->
+        <div class="recovery-card">
+
+            <h3
+                data-en="🥗 Eat Healthy Food"
+                data-bn="🥗 স্বাস্থ্যকর খাবার খান">
+                🥗 Eat Healthy Food
+            </h3>
+
+            <p
+                data-en="Eat nutritious and easily digestible foods to support your body's recovery."
+                data-bn="শরীরের সুস্থতায় সহায়তা করতে পুষ্টিকর ও সহজে হজম হয় এমন খাবার খান।">
+                Eat nutritious and easily digestible foods to support your body's recovery.
+            </p>
+
+        </div>
+
+
+        <!-- Follow Doctor's Advice -->
+        <div class="recovery-card">
+
+            <h3
+                data-en="👨‍⚕️ Follow Doctor's Advice"
+                data-bn="👨‍⚕️ চিকিৎসকের পরামর্শ অনুসরণ করুন">
+                👨‍⚕️ Follow Doctor's Advice
+            </h3>
+
+            <p
+                data-en="Take medicines only as prescribed and attend follow-up checkups."
+                data-bn="শুধুমাত্র চিকিৎসকের পরামর্শ অনুযায়ী ওষুধ সেবন করুন এবং নিয়মিত ফলো-আপ চেকআপ করুন।">
+                Take medicines only as prescribed and attend follow-up checkups.
+            </p>
+
+        </div>
+
+
+        <!-- Monitor Warning Signs -->
+        <div class="recovery-card">
+
+            <h3
+                data-en="⚠️ Monitor Warning Signs"
+                data-bn="⚠️ বিপদের লক্ষণ লক্ষ্য করুন">
+                ⚠️ Monitor Warning Signs
+            </h3>
+
+            <p
+                data-en="Watch for warning signs such as severe abdominal pain, persistent vomiting, bleeding, or unusual weakness and seek medical care promptly."
+                data-bn="তীব্র পেটব্যথা, বারবার বমি, রক্তপাত বা অস্বাভাবিক দুর্বলতার মতো বিপদের লক্ষণ দেখা দিলে দ্রুত চিকিৎসা নিন।">
+                Watch for warning signs such as severe abdominal pain, persistent vomiting, bleeding, or unusual weakness and seek medical care promptly.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- DOCTOR LIST SECTION -->
+<section id="doctor-list" class="doctor-section">
+
+    <h2>👨‍⚕️ Our Recommended Doctors</h2>
+
+    <p>
+        Find doctors and hospital information
+        for consultation about dengue.
+    </p>
+
+    <div id="doctors-container" class="doctors-container">
+    </div>
+
+</section>
+
+
+<!-- ===============================
+     SYMPTOM CHECKER
+================================ -->
+    
+<section class="checker" id="checker">
+
+  <h2
+    data-en="Symptom Checker"
+    data-bn="উপসর্গ যাচাই">
+    Symptom Checker
+</h2>
+
+<p
+    data-en="Select the symptoms you are experiencing and check your risk."
+    data-bn="আপনার যে উপসর্গগুলো রয়েছে সেগুলো নির্বাচন করে ঝুঁকি যাচাই করুন।">
+    Select the symptoms you are experiencing and check your risk.
+</p>
+
+<div class="symptom-options">
+
+    <label>
+        <input type="checkbox" id="fever">
+        <span data-en="High Fever" data-bn="উচ্চ জ্বর">High Fever</span>
+    </label>
+
+    <label>
+        <input type="checkbox" id="headache">
+        <span data-en="Severe Headache" data-bn="তীব্র মাথাব্যথা">Severe Headache</span>
+    </label>
+
+    <label>
+        <input type="checkbox" id="joint">
+        <span data-en="Muscle & Joint Pain" data-bn="পেশি ও জয়েন্টে ব্যথা">Muscle & Joint Pain</span>
+    </label>
+
+    <label>
+        <input type="checkbox" id="rash">
+        <span data-en="Skin Rash" data-bn="ত্বকে ফুসকুড়ি">Skin Rash</span>
+    </label>
+
+    <label>
+        <input type="checkbox" id="nausea">
+        <span data-en="Nausea & Vomiting" data-bn="বমি বমি ভাব ও বমি">Nausea & Vomiting</span>
+    </label>
+
+</div>
+
+<button
+    type="button"
+    onclick="checkSymptoms()"
+    data-en="🔍 Check Symptoms"
+    data-bn="🔍 উপসর্গ যাচাই">
+    🔍 Check Symptoms
+</button>
+
+<div id="result" class="result-box"></div>
+<div id="recommended-doctors-result"></div>
+
+</section>
+
+
+
+<!-- ===============================
+     DATASET ANALYSIS
+================================ -->
+
+<section id="dataset-analysis">
+
+    <h2>📊 Dengue Dataset Analysis</h2>
+
+    <p>
+        This section shows basic statistical information
+        from the dengue dataset used in this project.
+    </p>
+
+    <div class="dataset-cards">
+
+        <div class="dataset-card">
+
+            <h3>Total Records</h3>
+
+            <p id="total-records">0</p>
+
+        </div>
+
+
+        <div class="dataset-card">
+
+            <h3>Dengue Negative</h3>
+
+            <p id="outcome-zero">0</p>
+
+        </div>
+
+
+        <div class="dataset-card">
+
+            <h3>Dengue Positive</h3>
+
+            <p id="outcome-one">0</p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Dataset Chart -->
+
+    <div class="dataset-chart">
+
+        <h3>Dengue Positive vs Negative</h3>
+
+        <canvas id="dengueChart"></canvas>
+
+    </div>
+
+<div class="dataset-chart">
+
+    <h3>Dengue Percentage Analysis</h3>
+
+    <canvas id="denguePercentageChart"></canvas>
+
+</div>
+<div class="dataset-chart">
+
+    <h3>Age Analysis</h3>
+    <canvas id="ageChart"></canvas>
+
+</div>
+<div class="dataset-chart">
+
+    <h3>Dengue DB Prediction Analysis</h3>
+
+    <canvas id="predictionChart"></canvas>
+
+</div>
+</section>
+<section class="contact" id="contact">
+
+    <h2
+    data-en="Contact Us"
+    data-bn="যোগাযোগ করুন">
+    Contact Us
+</h2>
+
+<p
+    data-en="Have questions? Send us a message and we will get back to you."
+    data-bn="আপনার কোনো প্রশ্ন আছে? আমাদের একটি বার্তা পাঠান, আমরা আপনার সাথে যোগাযোগ করব।">
+    Have questions? Send us a message and we will get back to you.
+</p>
+    <form class="contact-form" onsubmit="sendMessage(event)">
+
+    <input type="text" id="name" placeholder="Your Name">
+
+    <input type="email" id="email" placeholder="Your Email">
+
+    <textarea id="message" placeholder="Write Your Message"></textarea>
+
+    <button type="submit">Send Message</button>
+    <div id="form-message"></div>
+
+</form>
+
+<div id="contact-result"></div>
+
+</section>
+
+<footer>
+
+    <h3
+    data-en="🦟 Smart Dengue Management System"
+    data-bn="🦟 স্মার্ট ডেঙ্গু ম্যানেজমেন্ট সিস্টেম">
+    🦟 Smart Dengue Management System
+</h3>
+
+<p
+    data-en="Stay Safe | Stay Healthy | Fight Dengue Together"
+    data-bn="নিরাপদ থাকুন | সুস্থ থাকুন | একসাথে ডেঙ্গুর বিরুদ্ধে লড়াই করি">
+    Stay Safe | Stay Healthy | Fight Dengue Together
+</p>
+
+<p
+    data-en="© 2026 Smart Dengue Management System. All Rights Reserved."
+    data-bn="© 2026 স্মার্ট ডেঙ্গু ম্যানেজমেন্ট সিস্টেম। সর্বস্বত্ব সংরক্ষিত।">
+    © 2026 Smart Dengue Management System. All Rights Reserved.
+</p>
+
+</footer>
+
+<script type="module" src="assets/js/script.js"></script>
+<!-- APPOINTMENT FORM -->
+<section id="appointment-section" class="appointment-section" style="display: none;">
+
+    <h2>📅 Book Doctor Appointment</h2>
+
+    <form id="appointment-form" style="display: flex; flex-direction: column; gap: 12px; max-width: 500px;">
+
+        <label>Patient Name</label>
+        <input type="text" id="patient-name" required>
+
+        <label>Phone Number</label>
+        <input type="tel" id="patient-phone" required>
+
+        <label>Selected Doctor</label>
+        <input type="text" id="selected-doctor" readonly>
+
+        <label>Appointment Date</label>
+        <input type="date" id="appointment-date" required>
+        
+<div id="date-availability" style="display: none; margin: 12px 0; padding: 15px; background: #e8f5e9; border-radius: 10px;">
+    <h3>📅 Selected Date Availability</h3>
+    <p>🎫 Total Tickets: <span id="date-total">30</span></p>
+    <p>✅ Booked: <span id="date-booked">0</span></p>
+    <p>🟢 Available: <span id="date-available">30</span></p>
+</div>
+
+
+        <label>Preferred Time</label>
+        <input type="time" id="appointment-time" required>
+
+        <button type="submit">Confirm Appointment</button>
+
+    </form>
+<div 
+id="appointment-ticket" style="display: none;">
+
+</div>
+</section>
+<script type="module" src="assets/js/doctors.js"></script>
+<script type="module" src="assets/js/script.js"></script>
+</body>
+
+<!-- Dengue AI Chatbot -->
+<div id="chatbot-container">
+    <button id="chatbot-toggle" type="button">
+        🤖 Chat with Dengue AI
+    </button>
+
+    <div id="chatbot-window" style="display: none;">
+        <div id="chatbot-header">
+            <h3>🤖 Dengue AI Assistant</h3>
+            <button id="chatbot-close" type="button">✖</button>
+        </div>
+
+        <div id="chatbot-messages">
+            <div class="bot-message">
+                আসসালামু আলাইকুম! ডেঙ্গু সম্পর্কে কী জানতে চান?
+                <br>
+                Hello! Ask me anything about dengue.
+            </div>
+        </div>
+
+        <form id="chatbot-form">
+            <input
+                type="text"
+                id="chatbot-input"
+                placeholder="আপনার প্রশ্ন লিখুন..."
+                required
+            >
+
+            <button type="submit">➤</button>
+        </form>
+    </div>
+</div>
+<!-- End Dengue AI Chatbot -->
+ <script src="assets/js/dengue-questions.js"></script>
+<script src="assets/js/script.js"></script>
+</body>
+
+</html>

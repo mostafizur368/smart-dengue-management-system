@@ -1,0 +1,23 @@
+SMART DENGUE MANAGEMENT SYSTEM - READY PACKAGE
+
+Upload the CONTENTS of this folder to the ROOT of your GitHub repository.
+Do not upload this folder as a nested folder.
+
+Excluded intentionally:
+- .env (contains private secrets; add OPENAI_API_KEY in Render Environment Variables)
+- node_modules (Render installs dependencies from package.json)
+- New Text Document.txt (empty accidental file)
+
+The backend entry point is server.js at repository root.
+The website uses:
+- assets/css/style.css
+- assets/images/dengue.png
+- assets/js/doctors.js
+- assets/js/dengue-questions.js
+- assets/js/script.js
+
+Render settings:
+- Build Command: npm install
+- Start Command: npm start
+
+Add OPENAI_API_KEY in Render -> Environment, if using the OpenAI chatbot endpoint.

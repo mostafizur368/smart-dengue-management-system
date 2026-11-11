@@ -4,30 +4,19 @@ const cors = require("cors");
 const path = require("path");
 const OpenAI = require("openai");
 
-// Load .env from project root
 require("dotenv").config({
-    path: path.resolve(__dirname, ".env")
+    path: path.join(__dirname, ".env")
 });
-
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Serve website files from project root
-const projectRoot = __dirname;
-app.use(express.static(projectRoot));
-// Home Page
-app.get("/", (req, res) => {
-    res.sendFile(path.join(projectRoot, "index.html"));
-});
-
-// OpenAI client
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// Health Check
+// Backend Health Check
 app.get("/api/health", (req, res) => {
     res.json({
         success: true,
@@ -51,11 +40,17 @@ app.post("/api/chat", async (req, res) => {
             model: "gpt-4o-mini",
             instructions: `
 You are Dengue AI Assistant for a Smart Dengue Management System.
-Answer dengue-related questions in Bangla or English.
-Reply in the same language as the user.
-Use simple language.
-Never diagnose or prescribe medicine.
-Advise immediate medical attention for warning signs.
+
+Your responsibilities:
+- Answer dengue-related questions in Bangla or English.
+- Reply in the same language used by the user.
+- Explain dengue symptoms, prevention, recovery, tests and warning signs.
+- Use simple language that ordinary people can understand.
+- Never claim to diagnose a patient.
+- Never prescribe medicines or change medical treatment.
+- Explain that platelet count alone cannot determine dengue severity.
+- If warning signs appear, advise immediate medical attention.
+- Do not replace professional medical advice.
             `,
             input: userMessage
         });
@@ -70,14 +65,13 @@ Advise immediate medical attention for warning signs.
 
         res.status(500).json({
             success: false,
-            reply: "Sorry, AI service is unavailable right now."
+            reply: "Sorry, AI service is unavailable right now. Please try again."
         });
     }
 });
 
-// Start Server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Dengue Server running on port ${PORT}`);
+    console.log(`Dengue AI Server running at http://localhost:${PORT}`);
 });

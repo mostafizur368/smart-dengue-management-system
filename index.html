@@ -16,7 +16,7 @@
     <title>Smart Dengue Management System</title>
 
     <!-- CSS File -->
-<link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js">
 
     </script>
@@ -172,7 +172,7 @@ onclick="location.href='#checker'"
 </button>
             </div>
             <div class="hero-image">
-               <img src="dengue.png" alt="Dengue Awareness">
+                <img src="assets/images/dengue.png" alt="Dengue Awareness">
                 </div>
         </section>
         <section class="about" id="about">
@@ -754,8 +754,6 @@ onclick="location.href='#checker'"
 </p>
 
 </footer>
-
-<script type="module" src="assets/js/script.js"></script>
 <!-- APPOINTMENT FORM -->
 <section id="appointment-section" class="appointment-section" style="display: none;">
 
@@ -794,22 +792,18 @@ id="appointment-ticket" style="display: none;">
 
 </div>
 </section>
-<script type="module" src="assets/js/doctors.js"></script>
-<script type="module" src="assets/js/script.js"></script>
-</body>
+
 
 <!-- Dengue AI Chatbot -->
 <div id="chatbot-container">
     <button id="chatbot-toggle" type="button">
         🤖 Chat with Dengue AI
     </button>
-
     <div id="chatbot-window" style="display: none;">
         <div id="chatbot-header">
             <h3>🤖 Dengue AI Assistant</h3>
             <button id="chatbot-close" type="button">✖</button>
         </div>
-
         <div id="chatbot-messages">
             <div class="bot-message">
                 আসসালামু আলাইকুম! ডেঙ্গু সম্পর্কে কী জানতে চান?
@@ -817,22 +811,18 @@ id="appointment-ticket" style="display: none;">
                 Hello! Ask me anything about dengue.
             </div>
         </div>
-
         <form id="chatbot-form">
-            <input
-                type="text"
-                id="chatbot-input"
-                placeholder="আপনার প্রশ্ন লিখুন..."
-                required
-            >
-
+            <input type="text" id="chatbot-input" placeholder="আপনার প্রশ্ন লিখুন..." required>
             <button type="submit">➤</button>
         </form>
     </div>
 </div>
 <!-- End Dengue AI Chatbot -->
- <script src="assets/js/dengue-questions.js"></script>
-<script src="assets/js/script.js"></script>
-</body>
 
+<!-- Project JavaScript -->
+<script type="module" src="assets/js/doctors.js"></script>
+<script src="assets/js/dengue-questions.js"></script>
+<script type="module" src="assets/js/script.js"></script>
+
+</body>
 </html>

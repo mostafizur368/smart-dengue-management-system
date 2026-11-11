@@ -6,7 +6,7 @@ const OpenAI = require("openai");
 
 // Load .env from project root
 require("dotenv").config({
-    path: path.resolve(__dirname, "../../.env")
+   path.resolve(__dirname, ".env")
 });
 
 const app = express();
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve website files from project root
-const projectRoot = path.resolve(__dirname, "../..");
+const projectRoot = __dirname;
 app.use(express.static(projectRoot));
 // Home Page
 app.get("/", (req, res) => {

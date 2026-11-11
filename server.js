@@ -11,6 +11,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+// Serve Website Files
+app.use(express.static(__dirname));
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY

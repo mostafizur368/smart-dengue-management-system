@@ -17,6 +17,10 @@ app.use(express.json());
 // Serve website files from project root
 const projectRoot = path.resolve(__dirname, "../..");
 app.use(express.static(projectRoot));
+// Home Page
+app.get("/", (req, res) => {
+    res.sendFile(path.join(projectRoot, "index.html"));
+});
 
 // OpenAI client
 const openai = new OpenAI({

@@ -1249,13 +1249,14 @@ const dengueKnowledge = [
         topic: "prevention",
 
         keywords: [
-            "prevention", "prevent", "প্রতিরোধ",
-            "বাঁচব", "মশা", "mosquito", "মশারি",
-            "এডিস", "aedes", "জমা পানি",
-            "মশার কামড়", "mosquito bite",
-            "মশা থেকে বাঁচা", "repellent",
-            "মশার ওষুধ", "পানি জমা"
-        ],
+    "prevention", "prevent", "প্রতিরোধ",
+    "বাঁচব", "বাঁচার", "বাঁচার উপায়",
+    "উপায়", "রক্ষা", "মশা", "mosquito",
+    "মশারি", "এডিস", "aedes", "জমা পানি",
+    "মশার কামড়", "mosquito bite",
+    "মশা থেকে বাঁচা", "repellent",
+    "মশার ওষুধ", "পানি জমা"
+],
 
         answerBn: "ডেঙ্গু প্রতিরোধে:\n\n১. বাড়ির আশপাশে জমে থাকা পানি পরিষ্কার করুন।\n২. মশারি ব্যবহার করুন।\n৩. লম্বা হাতার পোশাক পরুন।\n৪. পানির পাত্র ঢেকে রাখুন।\n৫. ফুলের টব ও ড্রেন নিয়মিত পরিষ্কার রাখুন।",
 
@@ -1474,7 +1475,7 @@ if (chatbotForm) {
 
         chatbotInput.value = "";
 
-        const answer = getDengueBankAnswer(message);
+       const answer = getDengueAnswer(message);
 
         addChatMessage(answer, "bot-message");
 

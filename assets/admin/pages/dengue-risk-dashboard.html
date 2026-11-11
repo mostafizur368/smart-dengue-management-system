@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dengue Risk Dashboard</title><style>body{font-family:Arial,sans-serif;background:#f4f8fb;color:#163042;margin:0;padding:24px}.wrap{max-width:900px;margin:auto}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}.card{background:white;padding:20px;border-radius:14px;box-shadow:0 3px 12px #0001}h1{color:#087f8c}.note{background:#fff4d8;padding:14px;border-radius:10px;line-height:1.5}a{color:#087f8c}</style></head><body><main class="wrap"><p><a href="../../../index.html">← Back to Home</a></p><h1>🦟 Dengue Risk Dashboard</h1><p>Live project indicators from the connected Firestore database. These are system records, not a medical or geographic prediction.</p><div class="cards"><div class="card"><p>Appointment Records</p><h2 id="appointments">—</h2></div><div class="card"><p>Symptom Check Records</p><h2 id="checks">—</h2></div><div class="card"><p>High-Risk Indicator</p><h2 id="risk">Not calculated</h2></div></div><p class="note">This dashboard does not infer area-wise dengue prevalence. Add verified, location-tagged case data before using it as a geographic risk map. If you have fever with severe abdominal pain, persistent vomiting, bleeding, breathing difficulty, or unusual drowsiness, seek urgent medical care.</p><p id="status">Loading live records…</p></main><script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+
+const config = {
+  apiKey: 'AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o',
+  authDomain: 'smart-dengue-management-system.firebaseapp.com',
+  projectId: 'smart-dengue-management-system',
+  storageBucket: 'smart-dengue-management-system.firebasestorage.app',
+  messagingSenderId: '164368465699',
+  appId: '1:164368465699:web:79fe552bea0b2bfc405696',
+  measurementId: 'G-384ZPGT9NN'
+};
+
+const app = getApps().length ? getApp() : initializeApp(config);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const status = document.getElementById('status');
+const setStatus = message => { status.textContent = message; };
+
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    setStatus('Please sign in with the Admin account to view dashboard records.');
+    return;
+  }
+  try {
+    const userSnap = await getDoc(doc(db, 'users', user.uid));
+    if (!userSnap.exists() || userSnap.data().role !== 'admin') {
+      setStatus('Admin access required. Please sign in with the Admin account.');
+      return;
+    }
+    const [appointmentsSnap, symptomsSnap] = await Promise.all([
+      getDocs(collection(db, 'appointments')),
+      getDocs(collection(db, 'symptom_checks'))
+    ]);
+    document.getElementById('appointments').textContent = appointmentsSnap.size;
+    document.getElementById('checks').textContent = symptomsSnap.size;
+    document.getElementById('risk').textContent = 'Data needed';
+    setStatus('Live data loaded. Geographic risk requires verified location-based case data.');
+  } catch (error) {
+    console.error('Dengue Risk Dashboard error:', error);
+    setStatus(`Could not load data (${error.code || 'unknown error'}). Confirm Admin login and Firestore Rules.`);
+  }
+});
+</script></body></html>

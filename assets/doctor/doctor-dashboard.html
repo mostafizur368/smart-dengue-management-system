@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Smart Dengue Management System</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f1f7f5;
+            color: #333;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        h1 {
+            color: #00897b;
+            text-align: center;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 7px;
+            background: #00897b;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .appointment-card {
+            margin: 18px 0;
+            padding: 22px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px #00000012;
+            overflow-wrap: anywhere;
+        }
+
+        .appointment-card p { line-height: 1.6; }
+
+        select {
+            padding: 9px;
+            border-radius: 6px;
+        }
+
+        #message {
+            text-align: center;
+            margin: 25px 0;
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <div class="top-bar">
+        <a class="btn" href="../../index.html">← Home</a>
+        <button class="btn" id="logout-btn">Logout</button>
+    </div>
+
+<h1>👨‍⚕️ Doctor Dashboard</h1>
+
+<p id="welcome" style="text-align:center;"></p>
+
+<section class="appointment-card" id="doctor-profile">
+    <h2>👤 My Doctor Profile</h2>
+    <p><strong>Name:</strong> <span id="doctor-name">Loading...</span></p>
+    <p><strong>Email:</strong> <span id="doctor-email">Loading...</span></p>
+    <p><strong>Phone:</strong> <span id="doctor-phone">Loading...</span></p>
+    <p><strong>Qualification:</strong> <span id="doctor-qualification">Loading...</span></p>
+    <p><strong>Hospital:</strong> <span id="doctor-hospital">Loading...</span></p>
+</section>
+
+<p id="message">Checking access and loading appointments...</p>
+<div id="appointments-list"></div>
+
+   
+</main>
+
+<script type="module">
+    import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getAuth, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+    getFirestore, collection, getDocs, doc, getDoc,
+    updateDoc, query, where
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
+        authDomain: "smart-dengue-management-system.firebaseapp.com",
+        projectId: "smart-dengue-management-system",
+        storageBucket: "smart-dengue-management-system.firebasestorage.app",
+        messagingSenderId: "164368465699",
+        appId: "1:164368465699:web:79fe552bea0b2bfc405696",
+        measurementId: "G-384ZPGT9NN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const message = document.getElementById("message");
+    const list = document.getElementById("appointments-list");
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "../../login.html";
+            return;
+        }
+
+        try {
+            console.log("Logged-in email:", user.email);
+console.log("Logged-in UID:", user.uid);
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            
+const profile = userSnap.exists() ? userSnap.data() : {};
+
+document.getElementById("doctor-name").textContent =
+    profile.name || "Not available";
+
+document.getElementById("doctor-email").textContent =
+    user.email || profile.email || "Not available";
+
+document.getElementById("doctor-phone").textContent =
+    profile.phone || "Not available";
+
+document.getElementById("doctor-qualification").textContent =
+    profile.qualification || "Not available";
+
+document.getElementById("doctor-hospital").textContent =
+    profile.hospital || "Not available";
+
+
+            if (!userSnap.exists() ||
+                !["doctor", "admin"].includes(userSnap.data().role)) {
+                message.textContent =
+                    "Access denied. This page is for authorized doctors or admins only.";
+                return;
+            }
+
+            document.getElementById("welcome").textContent =
+                "Welcome, " + (user.displayName || user.email);
+
+            const snapshot = await getDocs(
+  query(
+    collection(db, "appointments"),
+    where("doctorUid", "==", user.uid)
+  )
+);
+            list.replaceChildren();
+
+            if (snapshot.empty) {
+                message.textContent = "No appointments found.";
+                return;
+            }
+
+            snapshot.forEach((item) => {
+                const a = item.data();
+                const card = document.createElement("article");
+                card.className = "appointment-card";
+
+                const heading = document.createElement("h2");
+                heading.textContent = "🎫 Appointment";
+                card.appendChild(heading);
+
+                [
+                    ["Ticket ID", item.id],
+                    ["Patient", a.patientName],
+                    ["Phone", a.patientPhone],
+                    ["Doctor", a.doctorName],
+                    ["Date", a.appointmentDate],
+                    ["Time", a.appointmentTime],
+                    ["Status", a.status || "Pending"]
+                ].forEach(([labelText, value]) => {
+                    const p = document.createElement("p");
+                    const strong = document.createElement("strong");
+                    strong.textContent = labelText + ": ";
+                    p.appendChild(strong);
+                    p.appendChild(document.createTextNode(
+                        value == null ? "Not available" : String(value)
+                    ));
+                    card.appendChild(p);
+                });
+
+                const select = document.createElement("select");
+                ["Pending", "Accepted", "Rejected"].forEach((status) => {
+                    const option = document.createElement("option");
+                    option.value = status;
+                    option.textContent = status;
+                    if ((a.status || "Pending").toLowerCase().startsWith(status.toLowerCase())) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+
+                const saveButton = document.createElement("button");
+                saveButton.className = "btn";
+                saveButton.textContent = "Update Status";
+                saveButton.style.marginLeft = "10px";
+
+                saveButton.addEventListener("click", async () => {
+                    try {
+                        await updateDoc(doc(db, "appointments", item.id), {
+                            status: select.value
+                        });
+                        alert("Appointment status updated.");
+                    } catch (error) {
+                        console.error(error);
+                        alert("Could not update status. Check Firestore permissions.");
+                    }
+                });
+
+                card.appendChild(select);
+                card.appendChild(saveButton);
+                list.appendChild(card);
+            });
+
+            message.textContent = "Appointments loaded.";
+        } catch (error) {
+            console.error("Doctor dashboard error:", error);
+            message.textContent =
+                "Could not load appointments. Check Firestore permissions.";
+        }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+        await signOut(auth);
+        window.location.href = "../../login.html";
+    });
+</script>
+</body>
+</html>

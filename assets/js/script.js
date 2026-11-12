@@ -1198,6 +1198,7 @@ if (chatbotClose && chatbotWindow) {
 function addChatMessage(message, className) {
     const messageElement = document.createElement("div");
     messageElement.className = className;
+    messageElement.style.whiteSpace = "pre-line";
     messageElement.textContent = className === "bot-message"
     ? message
         .replace(/([০-৯0-9]+)[.।]\s*/g, "\n$1. ")

@@ -1150,8 +1150,8 @@ footer *{
     background: #e0f2f1;
     color: #222;
     margin-right: auto;
+    white-space: pre-line;
 }
-
 .user-message {
     background: #00897b;
     color: white;

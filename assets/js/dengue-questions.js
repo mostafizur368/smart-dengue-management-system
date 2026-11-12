@@ -1483,6 +1483,33 @@ function getOriginalDengueBankAnswer(message) {
 // ========================================
 
 const dengueSpecificAnswers = [
+    
+    {
+        topic: "initial_care",
+        keywordsBn: [
+            "ডেঙ্গু হলে কি করতে হয়",
+            "ডেঙ্গু হলে কী করতে হয়",
+            "ডেঙ্গু হলে কী করব",
+            "ডেঙ্গু হলে করণীয়",
+            "ডেঙ্গু হলে করণীয়",
+            "ডেঙ্গু হলে কি করা উচিত",
+            "ডেঙ্গু হলে কি করবো",
+            "ডেঙ্গু আক্রান্ত হলে",
+            "ডেঙ্গু সন্দেহ হলে",
+            "ডেঙ্গু হলে বাসায় কি করব"
+        ],
+        keywordsEn: [
+            "what should i do if i have dengue",
+            "what to do if i have dengue",
+            "what should i do when i have dengue",
+            "what to do during dengue",
+            "what should a dengue patient do",
+            "dengue home care"
+        ],
+        answerBn: "ডেঙ্গু সন্দেহ হলে দ্রুত চিকিৎসকের পরামর্শ নিন এবং প্রয়োজন অনুযায়ী পরীক্ষা করান। পর্যাপ্ত বিশ্রাম নিন, চিকিৎসকের পরামর্শ অনুযায়ী তরল পান করুন এবং জ্বরের ওষুধ নিজে থেকে খাবেন না। Aspirin ও Ibuprofen এড়িয়ে চলুন। তীব্র পেটব্যথা, বারবার বমি, রক্তপাত, শ্বাসকষ্ট বা অস্বাভাবিক ঝিমুনি হলে অবিলম্বে হাসপাতালে যান।",
+        answerEn: "If dengue is suspected, consult a healthcare professional promptly and get appropriate tests. Rest and maintain fluids as advised. Do not self-medicate. Avoid aspirin and ibuprofen. Seek emergency care for severe abdominal pain, persistent vomiting, bleeding, breathing difficulty or unusual drowsiness."
+    },
+
 
     {
         topic: "sleep",

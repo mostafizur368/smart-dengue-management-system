@@ -1230,6 +1230,11 @@ function dengueTokens(text) {
 function isDengueRelated(tokens) {
 
     const dengueTerms = new Set([
+        "ডেঙ্গু",
+        "জ্বর",
+        "মশা",
+        "মশার",
+        "প্রতিরোধ",
         "dengue",
         "sleep",
         "night",

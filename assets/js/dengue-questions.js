@@ -1077,6 +1077,7 @@ const dengueQuestionBank = [
 ];
 
 
+
 // ========================================
 // ADVANCED DENGUE QUESTION MATCHING SYSTEM
 // ========================================
@@ -1088,8 +1089,10 @@ function detectDengueLanguage(text) {
 
 // Text Normalization
 function normalizeDengueText(text) {
-    return text.toLowerCase()
-        .replace(/[.,!?;:।"'“”‘’(){}\[\]\-]/g, " ")
+    return String(text || "")
+        .toLowerCase()
+        .normalize("NFC")
+        .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -1100,114 +1103,126 @@ const dengueStopWords = new Set([
     "does", "can", "i", "my", "me", "to", "for",
     "of", "in", "on", "with", "and", "or", "please",
     "tell", "about", "should", "would", "why",
-    "হলে", "কি", "কী", "কেন", "কিভাবে", "কীভাবে", "থেকে",
-    "আমার", "আমাকে", "একটা", "একটি", "হয়", "হবে",
-    "হয়", "করব", "করবো", "বলুন", "জানতে", "চাই",
-    "নিয়ে", "নিয়ে", "করে", "করতে", "হচ্ছে",
-    "আসে", "হয়েছে", "হয়েছে", "না", "হতে"
+    "হলে", "কি", "কী", "কেন", "কিভাবে", "কীভাবে",
+    "থেকে", "আমার", "আমাকে", "একটা", "একটি",
+    "হয়", "হবে", "হয়", "করব", "করবো", "বলুন",
+    "জানতে", "চাই", "নিয়ে", "নিয়ে", "করে",
+    "করতে", "হচ্ছে", "আসে", "হয়েছে", "হয়েছে",
+    "না", "হতে", "একটু", "আমাকে", "আপনি"
 ]);
 
 // Similar Meaning / Synonym Mapping
 const dengueSynonyms = {
-
     dengue: [
-        "ডেঙ্গু", "ডেঙ্গুর", "ডেঙ্গুতে", "dengue"
+        "dengue", "ডেঙ্গু", "ডেঙ্গুর", "ডেঙ্গুতে",
+        "ডেঙ্গুকে", "ডেঙ্গুজনিত"
     ],
-
-    sleep: [
-        "ঘুম", "ঘুমের", "ঘুমানো", "ঘুমানোর",
-        "ঘুমাতে", "ঘুমাতে", "ঘুমের", "sleep",
-        "sleeping", "insomnia"
-    ],
-
-    night: [
-        "রাত", "রাতে", "রাত্রে", "night", "nighttime"
-    ],
-
-    problem: [
-        "সমস্যা", "সমস্যায়", "সমস্যার",
-        "problem", "problems", "issue", "issues"
-    ],
-
-   symptoms: [
-    "লক্ষণ", "লক্ষণগুলো", "লক্ষণগুলা",
-    "লক্ষণগুলোর", "লক্ষন", "লক্ষনগুলো",
-    "লক্ষনগুলা", "উপসর্গ", "উপসর্গগুলো",
-    "চিহ্ন", "symptom", "symptoms", "sign", "signs"
-],
 
     fever: [
-        "জ্বর", "জ্বরের", "জ্বরটা", "fever", "highfever"
+        "fever", "জ্বর", "জ্বরের", "জ্বরটা",
+        "জ্বরেতে", "জ্বর হলে", "jhor", "jor"
+    ],
+
+    symptoms: [
+        "symptom", "symptoms", "sign", "signs",
+        "লক্ষণ", "লক্ষণগুলো", "লক্ষণগুলা",
+        "লক্ষন", "লক্ষনগুলো", "উপসর্গ",
+        "উপসর্গগুলো", "চিহ্ন", "lokkhon", "lokkhon gula"
     ],
 
     headache: [
-        "মাথাব্যথা", "মাথাব্যথার", "headache", "headaches"
+        "headache", "headaches", "মাথাব্যথা",
+        "মাথা ব্যথা", "মাথার ব্যথা",
+        "matha betha", "matha batha"
     ],
 
     bodypain: [
-        "শরীরব্যথা", "ব্যথা", "গাব্যথা",
-        "bodypain", "musclepain"
+        "bodypain", "body", "musclepain",
+        "শরীরব্যথা", "শরীর ব্যথা", "গাব্যথা",
+        "গা ব্যথা", "শরীরের ব্যথা"
     ],
 
     mosquito: [
-        "মশা", "মশার", "মশারি", "mosquito", "mosquitoes"
+        "mosquito", "mosquitoes", "মশা",
+        "মশার", "মশারি", "mosha", "moshar"
     ],
 
-   prevention: [
-    "প্রতিরোধ", "প্রতিরোধের",
-    "বাঁচা", "বাঁচার", "বাঁচতে",
-    "রক্ষা", "রক্ষার",
-    "উপায়", "উপায়", "উপায়ে",
-    "করণীয়", "করণীয়",
-    "prevent", "prevention", "protect"
-],
+    prevention: [
+        "prevention", "prevent", "protect",
+        "প্রতিরোধ", "প্রতিরোধের", "বাঁচা",
+        "বাঁচার", "রক্ষা", "রক্ষার", "উপায়",
+        "উপায়", "করণীয়", "করণীয়", "protirodh"
+    ],
 
     test: [
+        "test", "tests", "testing", "report",
         "পরীক্ষা", "টেস্ট", "রিপোর্ট",
-        "test", "tests", "testing", "report"
+        "পরীক্ষার", "রক্ত পরীক্ষা"
     ],
 
     platelet: [
-        "প্লাটিলেট", "প্লেটলেট", "platelet", "platelets"
+        "platelet", "platelets", "প্লাটিলেট",
+        "প্লেটলেট", "প্লাটিলেটের", "অনুচক্রিকা"
     ],
 
     food: [
+        "food", "foods", "eat", "eating", "diet",
         "খাবার", "খাওয়া", "খেতে", "খাব",
-        "food", "foods", "eat", "eating", "diet"
+        "খাদ্য", "পুষ্টি", "khabar", "khaoa"
     ],
 
     medicine: [
-        "ওষুধ", "ঔষধ", "মেডিসিন",
-        "medicine", "medication", "drug", "drugs"
+        "medicine", "medication", "drug", "drugs",
+        "ওষুধ", "ঔষধ", "মেডিসিন", "ওষুধের"
     ],
 
     recovery: [
+        "recovery", "recover", "recovering",
         "সুস্থ", "সেরে", "সুস্থতা",
-        "recovery", "recover", "recovering"
+        "আরোগ্য", "ভালো হওয়া", "ভালো হওয়ার"
     ],
 
     weakness: [
-        "দুর্বলতা", "দুর্বল", "weakness", "weak"
+        "weakness", "weak", "tired", "fatigue",
+        "দুর্বলতা", "দুর্বল", "ক্লান্তি",
+        "ক্লান্ত", "অবসাদ"
     ],
 
     vomiting: [
-        "বমি", "বমিভাব", "বমিবমিভাব",
-        "vomit", "vomiting", "nausea"
+        "vomit", "vomiting", "nausea",
+        "বমি", "বমিভাব", "বমি ভাব"
     ],
 
     bleeding: [
-        "রক্তপাত", "রক্ত", "রক্তপড়া",
-        "bleeding", "blood"
+        "bleeding", "blood", "রক্তপাত",
+        "রক্ত", "রক্তপড়া", "রক্ত পড়া"
     ],
 
     breathing: [
-        "শ্বাসকষ্ট", "শ্বাস", "শ্বাসপ্রশ্বাস",
-        "breathing", "breath"
+        "breathing", "breath", "শ্বাসকষ্ট",
+        "শ্বাস", "শ্বাসপ্রশ্বাস"
     ],
 
     transmission: [
-        "ছড়ায়", "ছড়ানো", "সংক্রমণ",
-        "spread", "transmission", "transmitted"
+        "spread", "transmission", "transmitted",
+        "ছড়ায়", "ছড়ায়", "ছড়ানো", "ছড়ানো",
+        "সংক্রমণ", "ছড়াতে"
+    ],
+
+    sleep: [
+        "sleep", "sleeping", "insomnia",
+        "ঘুম", "ঘুমের", "ঘুমানো", "ঘুমানোর",
+        "ঘুমাতে", "নিদ্রা"
+    ],
+
+    night: [
+        "night", "nighttime", "রাত",
+        "রাতে", "রাত্রে"
+    ],
+
+    problem: [
+        "problem", "problems", "issue", "issues",
+        "সমস্যা", "সমস্যার", "সমস্যায়"
     ]
 };
 
@@ -1216,50 +1231,125 @@ const dengueSynonymMap = {};
 
 for (const [mainWord, words] of Object.entries(dengueSynonyms)) {
     words.forEach(word => {
-        dengueSynonymMap[word] = mainWord;
+        dengueSynonymMap[normalizeDengueText(word)] = mainWord;
     });
+}
+
+// Common Banglish Word Mapping
+const dengueBanglishMap = {
+    "dengu": "dengue",
+    "dengue": "dengue",
+    "jhor": "fever",
+    "jor": "fever",
+    "mosha": "mosquito",
+    "moshar": "mosquito",
+    "lokkhon": "symptoms",
+    "lokkhn": "symptoms",
+    "matha": "headache",
+    "betha": "bodypain",
+    "batha": "bodypain",
+    "rokto": "bleeding",
+    "rokto-pat": "bleeding",
+    "platelet": "platelet",
+    "platlet": "platelet",
+    "khabar": "food",
+    "oshudh": "medicine",
+    "osudh": "medicine",
+    "ghum": "sleep",
+    "durbol": "weakness",
+    "durbolota": "weakness",
+    "bomi": "vomiting",
+    "shash": "breathing",
+    "protirodh": "prevention",
+    "porikkha": "test",
+    "porikkhar": "test",
+    "shustho": "recovery",
+    "shusthota": "recovery"
+};
+
+// Fuzzy Matching: Edit Distance
+function dengueEditDistance(a, b) {
+    if (a === b) return 0;
+
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+
+    const dp = Array.from(
+        { length: a.length + 1 },
+        () => Array(b.length + 1).fill(0)
+    );
+
+    for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+            dp[i][j] = Math.min(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost
+            );
+        }
+    }
+
+    return dp[a.length][b.length];
+}
+
+// Correct Common Spelling Mistakes
+function correctDengueWord(word) {
+    if (dengueSynonymMap[word]) {
+        return dengueSynonymMap[word];
+    }
+
+    if (dengueBanglishMap[word]) {
+        return dengueBanglishMap[word];
+    }
+
+    let bestMatch = null;
+    let bestDistance = Infinity;
+
+    const knownWords = Object.keys(dengueSynonymMap);
+
+    for (const knownWord of knownWords) {
+        if (word.length < 4 || knownWord.length < 4) continue;
+
+        const distance = dengueEditDistance(word, knownWord);
+        const allowedDistance = word.length >= 8 ? 2 : 1;
+
+        if (
+            distance <= allowedDistance &&
+            distance < bestDistance
+        ) {
+            bestDistance = distance;
+            bestMatch = dengueSynonymMap[knownWord];
+        }
+    }
+
+    return bestMatch || word;
 }
 
 // Convert Words into Standard Tokens
 function dengueTokens(text) {
-
     return normalizeDengueText(text)
         .split(" ")
         .filter(word =>
             word.length > 1 &&
             !dengueStopWords.has(word)
         )
-        .map(word => dengueSynonymMap[word] || word);
+        .map(word => correctDengueWord(word));
 }
 
 // Check Whether Question Is Dengue Related
 function isDengueRelated(tokens) {
-
     const dengueTerms = new Set([
-        "ডেঙ্গু",
-        "জ্বর",
-        "মশা",
-        "মশার",
-        "প্রতিরোধ",
-        "dengue",
-        "sleep",
-        "night",
-        "symptoms",
-        "fever",
-        "headache",
-        "bodypain",
-        "mosquito",
-        "prevention",
-        "test",
-        "platelet",
-        "food",
-        "medicine",
-        "recovery",
-        "weakness",
-        "vomiting",
-        "bleeding",
-        "breathing",
-        "transmission"
+        "dengue", "fever", "mosquito", "symptoms",
+        "headache", "bodypain", "prevention",
+        "test", "platelet", "food", "medicine",
+        "recovery", "weakness", "vomiting",
+        "bleeding", "breathing", "transmission",
+        "sleep", "night", "problem"
     ]);
 
     return tokens.some(word => dengueTerms.has(word));
@@ -1267,7 +1357,6 @@ function isDengueRelated(tokens) {
 
 // Calculate Question Similarity
 function dengueSimilarity(userQuestion, savedQuestion) {
-
     const userWords = [...new Set(dengueTokens(userQuestion))];
     const savedWords = [...new Set(dengueTokens(savedQuestion))];
 
@@ -1284,8 +1373,23 @@ function dengueSimilarity(userQuestion, savedQuestion) {
     const userCoverage = overlap / userWords.length;
     const savedCoverage = overlap / savedWords.length;
 
-    return (userCoverage * 0.65) + (savedCoverage * 0.35);
+    // Balanced similarity score
+    const coverageScore =
+        (userCoverage * 0.60) + (savedCoverage * 0.40);
+
+    // Exact normalized phrase bonus
+    const userNormalized = normalizeDengueText(userQuestion);
+    const savedNormalized = normalizeDengueText(savedQuestion);
+
+    const exactBonus = userNormalized === savedNormalized ? 0.20 : 0;
+
+    return Math.min(1, coverageScore + exactBonus);
 }
+
+// ========================================
+// END ADVANCED MATCHING SYSTEM
+// ========================================
+
 
 // Main Chatbot Answer Function
 function getOriginalDengueBankAnswer(message) {

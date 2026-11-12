@@ -1199,9 +1199,10 @@ function addChatMessage(message, className) {
     const messageElement = document.createElement("div");
     messageElement.className = className;
     messageElement.textContent = className === "bot-message"
-    ? message.replace(/([০-৯]+|[0-9]+)\.\s*/g, "\n$&").trim()
+    ? message
+        .replace(/([০-৯0-9]+)[.।]\s*/g, "\n$1. ")
+        .trim()
     : message;
-
     chatbotMessages.appendChild(messageElement);
     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 

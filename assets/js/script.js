@@ -1479,7 +1479,7 @@ if (chatbotForm) {
 
         chatbotInput.value = "";
 
-       const answer = getDengueAnswer(message);
+       const answer = getDengueBankAnswer(message);
 
         addChatMessage(answer, "bot-message");
 

@@ -1129,10 +1129,12 @@ const dengueSynonyms = {
         "problem", "problems", "issue", "issues"
     ],
 
-    symptoms: [
-        "লক্ষণ", "লক্ষণগুলো", "উপসর্গ",
-        "চিহ্ন", "symptom", "symptoms", "sign", "signs"
-    ],
+   symptoms: [
+    "লক্ষণ", "লক্ষণগুলো", "লক্ষণগুলা",
+    "লক্ষণগুলোর", "লক্ষন", "লক্ষনগুলো",
+    "লক্ষনগুলা", "উপসর্গ", "উপসর্গগুলো",
+    "চিহ্ন", "symptom", "symptoms", "sign", "signs"
+],
 
     fever: [
         "জ্বর", "জ্বরের", "জ্বরটা", "fever", "highfever"

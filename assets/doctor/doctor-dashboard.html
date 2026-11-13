@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="../../manifest.webmanifest">
+    <meta name="theme-color" content="#087f8c">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor Dashboard - Smart Dengue Management System</title>
@@ -87,6 +89,53 @@
     <p><strong>Hospital:</strong> <span id="doctor-hospital">Loading...</span></p>
 </section>
 
+<section class="appointment-card" id="clinical-review-section" hidden>
+    <h2>🧑‍⚕️ Assigned Chatbot Clinical Reviews</h2>
+    <p>Review the medical answer against current clinical sources. Your decision does not publish or edit the chatbot answer.</p>
+    <p id="clinical-review-message" aria-live="polite">Loading assigned reviews...</p>
+    <div id="clinical-review-list" style="display:grid;gap:14px;"></div>
+</section>
+
+<section class="appointment-card" id="doctor-availability-section">
+    <h2>74 · My Weekly Availability</h2>
+    <p>Set your weekly working days and appointment window. Only your signed-in doctor account can update this schedule.</p>
+    <form id="doctor-availability-form" style="display:grid;gap:10px;max-width:600px;">
+        <fieldset style="border:1px solid #d4e0e5;border-radius:8px;padding:12px;">
+            <legend>Available days</legend>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;">
+                <label><input type="checkbox" name="doctor-availability-day" value="Mon"> Monday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Tue"> Tuesday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Wed"> Wednesday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Thu"> Thursday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Fri"> Friday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Sat"> Saturday</label>
+                <label><input type="checkbox" name="doctor-availability-day" value="Sun"> Sunday</label>
+            </div>
+        </fieldset>
+        <label for="doctor-availability-start">Start time</label>
+        <input id="doctor-availability-start" type="time" required>
+        <label for="doctor-availability-end">End time</label>
+        <input id="doctor-availability-end" type="time" required>
+        <label for="doctor-availability-limit">Daily ticket limit (1–30)</label>
+        <input id="doctor-availability-limit" type="number" min="1" max="30" required>
+        <button class="btn" type="submit">Save my availability</button>
+    </form>
+    <p id="doctor-availability-status" role="status"></p>
+</section>
+
+<section class="appointment-card" id="doctor-secure-messaging">
+    <h2>78 · Secure Patient Messages</h2>
+    <p>Open a conversation started by a patient. This inbox is not monitored as an emergency service.</p>
+    <p id="doctor-message-status" role="status"></p>
+    <h3>Patient conversations</h3><div id="doctor-conversation-list" style="display:grid;gap:8px;"></div>
+    <h3>Message thread</h3><div id="doctor-message-thread" style="display:grid;gap:8px;max-height:320px;overflow:auto;"></div>
+    <form id="doctor-message-form" style="display:grid;gap:8px;">
+        <label for="doctor-message-text">Reply (maximum 2,000 characters)</label>
+        <textarea id="doctor-message-text" maxlength="2000" required></textarea>
+        <button class="btn" type="submit">Send reply</button>
+    </form>
+</section>
+
 <p id="message">Checking access and loading appointments...</p>
 <div id="appointments-list"></div>
 
@@ -104,7 +153,7 @@ import {
 
 import {
     getFirestore, collection, getDocs, doc, getDoc,
-    updateDoc, query, where
+    updateDoc, query, where, serverTimestamp, addDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
     const firebaseConfig = {
         apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
@@ -122,6 +171,84 @@ import {
 
     const message = document.getElementById("message");
     const list = document.getElementById("appointments-list");
+
+    async function loadAssignedClinicalReviews(user, profile) {
+        const section = document.getElementById("clinical-review-section");
+        const message = document.getElementById("clinical-review-message");
+        const container = document.getElementById("clinical-review-list");
+        if (!section || !profile || profile.clinicalReviewer !== true) return;
+        section.hidden = false;
+        try {
+            const snapshot = await getDocs(query(
+                collection(db, "chatbot_clinical_reviews"),
+                where("assignedReviewerUid", "==", user.uid)
+            ));
+            const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+                .filter(item => (item.status || "pending") === "pending");
+            container.replaceChildren();
+            if (!records.length) { message.textContent = "No assigned clinical reviews are waiting."; return; }
+            message.textContent = `${records.length} assigned review(s).`;
+            records.forEach(item => {
+                const card = document.createElement("article");
+                card.style.cssText = "padding:14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;display:grid;gap:9px;";
+                const title = document.createElement("h3"); title.textContent = item.sourceQuestion || "Question unavailable";
+                const topic = document.createElement("p"); topic.textContent = `Topic: ${item.topic || "general"} · Status: ${item.status || "pending"}`;
+                const bn = document.createElement("p"); bn.textContent = `Bangla answer:\n${item.answerBn || "Not available"}`; bn.style.whiteSpace = "pre-wrap";
+                const en = document.createElement("p"); en.textContent = `English answer:\n${item.answerEn || "Not available"}`; en.style.whiteSpace = "pre-wrap";
+                const sourceHeading = document.createElement("strong"); sourceHeading.textContent = "Reference sources to inspect";
+                const sourcesBox = document.createElement("div"); sourcesBox.style.cssText = "display:grid;gap:6px;";
+                const sourceChecks = [];
+                (Array.isArray(item.sources) ? item.sources : []).forEach(source => {
+                    const label = document.createElement("label"); label.style.cssText = "display:flex;gap:8px;align-items:flex-start;";
+                    const check = document.createElement("input"); check.type = "checkbox"; check.value = String(source.id || "");
+                    const link = document.createElement("a"); link.href = source.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = `${source.organization || "Source"}: ${source.title || source.url}`;
+                    label.append(check, link); sourcesBox.appendChild(label); sourceChecks.push(check);
+                });
+                if (!sourceChecks.length) { const noSources = document.createElement("p"); noSources.textContent = "No source links were attached. Request a new review with references before approving."; sourcesBox.appendChild(noSources); }
+                const notesLabel = document.createElement("label"); notesLabel.textContent = "Clinical review notes (minimum 10 characters)";
+                const notes = document.createElement("textarea"); notes.rows = 3; notes.maxLength = 2000; notes.placeholder = "Summarize the clinical reasoning and any required correction..."; notes.style.width = "100%";
+                notesLabel.appendChild(notes);
+                const actions = document.createElement("div"); actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;";
+                async function submitDecision(decision) {
+                    const reviewerNotes = notes.value.trim();
+                    const reviewedSourceIds = sourceChecks.filter(check => check.checked).map(check => check.value).filter(Boolean);
+                    if (reviewerNotes.length < 10) { alert("Please enter at least 10 characters of clinical review notes."); return; }
+                    if (decision === "approved" && !reviewedSourceIds.length) { alert("Before approving, tick at least one clinical source you reviewed."); return; }
+                    if (!confirm(`Submit clinical decision: ${decision.replaceAll("_", " ")}? This will not publish the answer.`)) return;
+                    actions.querySelectorAll("button").forEach(button => button.disabled = true);
+                    try {
+                        const reviewDueAt = decision === "approved" ? new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString() : null;
+                        await updateDoc(doc(db, "chatbot_clinical_reviews", item.id), {
+                            status: decision,
+                            reviewDecision: decision,
+                            reviewerNotes,
+                            reviewedSourceIds,
+                            reviewerUid: user.uid,
+                            reviewerName: profile.name || user.displayName || "Clinical reviewer",
+                            reviewedAt: serverTimestamp(),
+                            reviewedAtClient: new Date().toISOString(),
+                            reviewDueAt
+                        });
+                        card.remove();
+                        message.textContent = "Review decision saved. Admin must separately publish any changes.";
+                    } catch (error) {
+                        console.error("Clinical review submission failed:", error);
+                        alert("Could not save the clinical review. Check reviewer permissions and Firestore Rules.");
+                        actions.querySelectorAll("button").forEach(button => button.disabled = false);
+                    }
+                }
+                [["Approve review", "approved"], ["Needs revision", "needs_revision"], ["Reject", "rejected"]].forEach(([label, value]) => {
+                    const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = label;
+                    button.addEventListener("click", () => submitDecision(value)); actions.appendChild(button);
+                });
+                card.append(title, topic, bn, en, sourceHeading, sourcesBox, notesLabel, actions);
+                container.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Assigned clinical review load failed:", error);
+            message.textContent = "Could not load assigned reviews. Confirm that this account is enabled as a clinical reviewer.";
+        }
+    }
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
@@ -153,15 +280,17 @@ document.getElementById("doctor-hospital").textContent =
     profile.hospital || "Not available";
 
 
-            if (!userSnap.exists() ||
-                !["doctor", "admin"].includes(userSnap.data().role)) {
+            const role = String(profile.role || "");
+            const isClinicalReviewer = profile.clinicalReviewer === true && ["doctor", "clinician"].includes(role);
+            if (!userSnap.exists() || (!["doctor", "admin"].includes(role) && !isClinicalReviewer)) {
                 message.textContent =
-                    "Access denied. This page is for authorized doctors or admins only.";
+                    "Access denied. This page is for authorized doctors, clinical reviewers or admins only.";
                 return;
             }
 
             document.getElementById("welcome").textContent =
                 "Welcome, " + (user.displayName || user.email);
+            if (isClinicalReviewer) await loadAssignedClinicalReviews(user, profile);
 
             const snapshot = await getDocs(
   query(
@@ -225,6 +354,15 @@ document.getElementById("doctor-hospital").textContent =
                         await updateDoc(doc(db, "appointments", item.id), {
                             status: select.value
                         });
+                        if (role === "doctor") {
+                            await addDoc(collection(db, "doctor_activity_logs"), {
+                                doctorUid: user.uid,
+                                action: "appointment_status_updated",
+                                summary: `Appointment ${item.id} status changed to ${select.value}.`,
+                                createdAt: serverTimestamp(),
+                                createdAtClient: new Date().toISOString()
+                            }).catch(() => {});
+                        }
                         alert("Appointment status updated.");
                     } catch (error) {
                         console.error(error);
@@ -250,5 +388,8 @@ document.getElementById("doctor-hospital").textContent =
         window.location.href = "../../login.html";
     });
 </script>
+<script type="module" src="../../assets/js/doctor-portal.js"></script>
+<script type="module" src="../../assets/js/doctor-messaging.js"></script>
+<script src="../../assets/js/pwa-register.js"></script>
 </body>
 </html>

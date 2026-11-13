@@ -580,6 +580,7 @@ window.addEventListener("load", function () {
 window.checkSymptoms = checkSymptoms;
 window.sendMessage = sendMessage;
 window.toggleLanguage = toggleLanguage;
+window.detectChatbotLanguage = detectLanguage;
 // ===============================
 // LOAD DENGUE DATASET
 // ===============================
@@ -849,26 +850,49 @@ function ticketCountDocId(doctorId, appointmentDate) {
     return `${String(doctorId)}_${String(appointmentDate)}`;
 }
 
-async function readTicketCount(doctorId, appointmentDate) {
+async function readTicketCount(doctorId, appointmentDate, defaultTotal = 30) {
     const ref = doc(db, "ticket_counts", ticketCountDocId(doctorId, appointmentDate));
     const snap = await getDoc(ref);
-    return snap.exists() ? Number(snap.data().booked || 0) : 0;
+    return snap.exists()
+        ? { booked: Number(snap.data().booked || 0), total: Number(snap.data().total || defaultTotal) }
+        : { booked: 0, total: defaultTotal };
 }
 
-async function incrementTicketCount(doctorId, appointmentDate) {
-    const ref = doc(db, "ticket_counts", ticketCountDocId(doctorId, appointmentDate));
+async function reserveAppointmentAndCreateTicket(appointmentData) {
+    const { ticketLimit = 30, ...appointmentRecord } = appointmentData;
+    const doctorId = String(appointmentRecord.doctorId);
+    const appointmentDate = String(appointmentRecord.appointmentDate);
+    const countRef = doc(db, "ticket_counts", ticketCountDocId(doctorId, appointmentDate));
+    const appointmentRef = doc(collection(db, "appointments"));
+    const configuredLimit = Number.isInteger(Number(ticketLimit)) ? Math.min(30, Math.max(1, Number(ticketLimit))) : 30;
+
     await runTransaction(db, async (transaction) => {
-        const snap = await transaction.get(ref);
-        const booked = snap.exists() ? Number(snap.data().booked || 0) : 0;
-        if (booked >= 30) throw new Error("This doctor's tickets are full for the selected date.");
-        transaction.set(ref, {
-            doctorId: String(doctorId),
-            appointmentDate: String(appointmentDate),
+        const countSnapshot = await transaction.get(countRef);
+        const booked = countSnapshot.exists() ? Number(countSnapshot.data().booked || 0) : 0;
+        // Capacity is fixed for a doctor/date after the first reservation.
+        const total = countSnapshot.exists() ? Number(countSnapshot.data().total || configuredLimit) : configuredLimit;
+        if (booked >= total) {
+            throw new Error("This doctor's tickets are full for the selected date. Choose another date.");
+        }
+
+        transaction.set(countRef, {
+            doctorId,
+            appointmentDate,
             booked: booked + 1,
-            total: 30,
+            total,
             updatedAt: serverTimestamp()
         });
+
+        transaction.set(appointmentRef, {
+            ...appointmentRecord,
+            doctorId,
+            appointmentDate,
+            status: "Pending",
+            timestamp: serverTimestamp()
+        });
     });
+
+    return appointmentRef;
 }
 
  // ===============================
@@ -919,6 +943,25 @@ const bookingDoctorId = selectedDoctor
     : doctorId;
     
     const bookingDoctorUid = selectedDoctor?.uid || null;
+
+// Respect the doctor's published weekly availability when a schedule exists.
+// This is a client-side booking check; the server-side appointment flow still
+// needs a transaction/Cloud Function to guarantee race-free slot reservation.
+if (selectedDoctor?.schedule?.days) {
+    const date = new Date(`${appointmentDate}T12:00:00`);
+    const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
+    const availableDays = String(selectedDoctor.schedule.days).split(",").map(day => day.trim());
+    const startTime = String(selectedDoctor.schedule.startTime || "");
+    const endTime = String(selectedDoctor.schedule.endTime || "");
+    if (!availableDays.includes(weekday)) {
+        alert(`This doctor is not listed as available on ${weekday}. Choose another date.`);
+        return;
+    }
+    if (startTime && endTime && (appointmentTime < startTime || appointmentTime >= endTime)) {
+        alert(`This doctor's listed hours are ${startTime}–${endTime}. Choose a time within that window.`);
+        return;
+    }
+}
 //     const bookingCheckQuery = query(
 //     collection(db, "appointments"),
 //     where("doctorId", "==", bookingDoctorId),
@@ -937,41 +980,37 @@ const bookingDoctorId = selectedDoctor
 
 console.log("Saving appointment now...");
 
-const appointmentRef = await addDoc(collection(db, "appointments"), {
+const appointmentRef = await reserveAppointmentAndCreateTicket({
     userId: auth.currentUser.uid,
-    patientName: patientName,
-    patientPhone: patientPhone,
-    doctorName: doctorName,
-    doctorId: bookingDoctorId,
+    patientName,
+    patientPhone,
+    doctorName,
     doctorUid: bookingDoctorUid,
-    appointmentDate: appointmentDate,
-    appointmentTime: appointmentTime,
-    status: "Demo booking - not hospital confirmed",
-    timestamp: serverTimestamp()
+    appointmentTime,
+    doctorId: bookingDoctorId,
+    appointmentDate,
+    ticketLimit: Number(selectedDoctor?.schedule?.dailyTicketLimit) || 30
 });
 
-try {
-    await incrementTicketCount(bookingDoctorId, appointmentDate);
-} catch (countError) {
-    console.error("Ticket count sync failed:", countError);
-}
-
         const ticket = document.getElementById("appointment-ticket");
+        const escapeTicketText = value => String(value ?? "").replace(/[&<>"']/g, character => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[character]));
 
         ticket.style.display = "block";
         ticket.innerHTML = `
             <h2>🎫 Appointment Ticket</h2>
             <p><strong>Ticket ID:</strong> ${appointmentRef.id}</p>
-            <p><strong>Patient:</strong> ${patientName}</p>
-            <p><strong>Phone:</strong> ${patientPhone}</p>
-            <p><strong>Doctor:</strong> ${doctorName}</p>
-            <p><strong>Date:</strong> ${appointmentDate}</p>
-            <p><strong>Time:</strong> ${appointmentTime}</p>
-            <p><strong>Status:</strong> Demo booking — not confirmed by hospital.</p>
+            <p><strong>Patient:</strong> ${escapeTicketText(patientName)}</p>
+            <p><strong>Phone:</strong> ${escapeTicketText(patientPhone)}</p>
+            <p><strong>Doctor:</strong> ${escapeTicketText(doctorName)}</p>
+            <p><strong>Date:</strong> ${escapeTicketText(appointmentDate)}</p>
+            <p><strong>Time:</strong> ${escapeTicketText(appointmentTime)}</p>
+            <p><strong>Status:</strong> Pending — the hospital/doctor must confirm this request.</p>
             <div style="margin-top:14px;padding:12px;border:1px dashed #087f8c;border-radius:10px;text-align:center">
               <h3>QR Code Appointment Ticket</h3>
               <div id="appointment-qr" style="display:flex;justify-content:center;margin:10px"></div>
-              <small>Show this QR code to the admin for ticket reference.</small>
+              <small>Reference ticket only. It is not a confirmed appointment until the doctor accepts it.</small>
             </div>
             <button type="button" id="print-appointment-ticket" style="margin-top:10px;padding:10px 16px;cursor:pointer">Print Ticket</button>
         `;
@@ -1002,15 +1041,17 @@ try {
 });
 
 async function updateDoctorTicketCounts(selectedDate) {
-    const totalTickets = 30;
     for (const doctor of window.doctors || []) {
+        const configuredLimit = Number(doctor.schedule?.dailyTicketLimit) || 30;
         const boxes = [
             document.getElementById(`ticket-count-${doctor.id}`),
             document.getElementById(`recommended-ticket-count-${doctor.id}`)
         ].filter(Boolean);
         if (!boxes.length) continue;
         try {
-            const booked = await readTicketCount(doctor.id, selectedDate);
+            const counts = await readTicketCount(doctor.id, selectedDate, configuredLimit);
+            const totalTickets = counts.total;
+            const booked = counts.booked;
             const available = Math.max(0, totalTickets - booked);
             boxes.forEach(box => {
                 box.innerHTML = `<p>🎫 Total Tickets: ${totalTickets}</p>
@@ -1039,10 +1080,12 @@ async function updateSelectedDateAvailability() {
     }
     box.style.display = "block";
     try {
-        const booked = await readTicketCount(doctorId, selectedDate);
-        document.getElementById("date-total").textContent = 30;
-        document.getElementById("date-booked").textContent = booked;
-        document.getElementById("date-available").textContent = Math.max(0, 30 - booked);
+        const selectedDoctor = (window.doctors || []).find(doctor => String(doctor.id) === String(doctorId));
+        const configuredLimit = Number(selectedDoctor?.schedule?.dailyTicketLimit) || 30;
+        const counts = await readTicketCount(doctorId, selectedDate, configuredLimit);
+        document.getElementById("date-total").textContent = counts.total;
+        document.getElementById("date-booked").textContent = counts.booked;
+        document.getElementById("date-available").textContent = Math.max(0, counts.total - counts.booked);
     } catch (error) {
         console.error("Date availability error:", error);
         document.getElementById("date-booked").textContent = "—";
@@ -1164,6 +1207,155 @@ nav.appendChild(li);
 
 
 
+// ===== Task 12: community question suggestions and approved bank sync =====
+async function loadApprovedCommunityQuestions() {
+    if (typeof window.mergeApprovedCommunityQuestions !== "function") return;
+    try {
+        const snapshot = await getDocs(
+            query(collection(db, "community_question_bank"), where("status", "==", "approved"))
+        );
+        const records = snapshot.docs.map(item => ({
+            id: item.id,
+            ...item.data()
+        }));
+        const added = window.mergeApprovedCommunityQuestions(records);
+        if (added && typeof window.searchDengueCandidates === "function") {
+            // Search index rebuilds automatically when its record count changes.
+            console.info(`Loaded ${added} approved community question(s).`);
+        }
+    } catch (error) {
+        // The built-in local bank remains available if Firebase is offline or rules are not deployed.
+        console.warn("Approved community questions could not be loaded:", error);
+    }
+}
+
+async function loadAdminQuestionBankChanges() {
+    if (typeof window.applyAdminQuestionBankChanges !== "function") return;
+    try {
+        const snapshot = await getDocs(
+            query(collection(db, "chatbot_admin_question_bank"), where("status", "in", ["active", "deleted"]))
+        );
+        const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const count = window.applyAdminQuestionBankChanges(records);
+        console.info(`Applied Admin knowledge-base changes. Active index entries: ${count}.`);
+    } catch (error) {
+        // Static and already-approved community questions remain available.
+        console.warn("Admin knowledge-base changes could not be loaded:", error);
+    }
+}
+
+async function loadApprovedAnswerCorrections() {
+    if (typeof window.loadApprovedAnswerOverrides !== "function") return;
+    try {
+        const snapshot = await getDocs(
+            query(collection(db, "chatbot_answer_overrides"), where("status", "==", "approved"))
+        );
+        const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const count = window.loadApprovedAnswerOverrides(records);
+        console.info(`Loaded ${count} approved answer correction(s).`);
+    } catch (error) {
+        console.warn("Approved answer corrections could not be loaded:", error);
+    }
+}
+
+// Tasks 32 + 37: load active official sources and clinician-approved answer reviews.
+async function loadMedicalSourcesAndClinicalReviews() {
+    try {
+        const [sourceSnapshot, reviewSnapshot] = await Promise.all([
+            getDocs(query(collection(db, "medical_sources"), where("status", "==", "active"))),
+            getDocs(query(collection(db, "chatbot_clinical_reviews"), where("status", "==", "approved")))
+        ]);
+        const sources = sourceSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        if (typeof window.loadMedicalSourceRegistry === "function") window.loadMedicalSourceRegistry(sources);
+        window.approvedMedicalReviews = reviewSnapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => new Date(b.reviewedAtClient || 0).getTime() - new Date(a.reviewedAtClient || 0).getTime());
+        console.info(`Loaded ${sources.length} active medical source(s) and ${window.approvedMedicalReviews.length} approved clinical review(s).`);
+    } catch (error) {
+        // Built-in reference links remain available; no answer is marked clinician-reviewed without a matching approval record.
+        console.warn("Medical source/review metadata could not be loaded:", error);
+        window.approvedMedicalReviews = Array.isArray(window.approvedMedicalReviews) ? window.approvedMedicalReviews : [];
+    }
+}
+
+function setupQuestionSuggestionForm() {
+    const openButton = document.getElementById("open-question-suggestion");
+    const form = document.getElementById("question-suggestion-form");
+    const input = document.getElementById("question-suggestion-input");
+    const status = document.getElementById("question-suggestion-status");
+    const cancel = document.getElementById("cancel-question-suggestion");
+    const submit = document.getElementById("submit-question-suggestion");
+    if (!openButton || !form || !input || !status || !submit) return;
+
+    openButton.addEventListener("click", () => {
+        form.hidden = !form.hidden;
+        if (!form.hidden) input.focus();
+    });
+    if (cancel) cancel.addEventListener("click", () => {
+        form.reset();
+        form.hidden = true;
+        status.textContent = "";
+    });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const question = input.value.trim();
+        const language = /[\u0980-\u09FF]/.test(question) ? "bn" : "en";
+        const normalizedQuestion = question.toLocaleLowerCase().normalize("NFKC")
+            .replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString())
+            .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
+            .replace(/\s+/g, " ").trim();
+
+        if (question.length < 8 || question.length > 300) {
+            status.textContent = "প্রশ্ন ৮–৩০০ অক্ষরের মধ্যে লিখুন। / Enter 8–300 characters.";
+            return;
+        }
+        if (!/ডেঙ্গু|dengue|জ্বর|fever|মশা|mosquito|platelet|প্লেটলেট/i.test(question)) {
+            status.textContent = "শুধু ডেঙ্গু-সম্পর্কিত প্রশ্ন প্রস্তাব করুন। / Please suggest dengue-related questions only.";
+            return;
+        }
+
+        const existing = Array.isArray(window.dengueQuestionIndex)
+            ? window.dengueQuestionIndex.some(item =>
+                item.question.toLocaleLowerCase().normalize("NFKC")
+                    .replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString())
+                    .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
+                    .replace(/\s+/g, " ").trim() === normalizedQuestion
+            )
+            : false;
+
+        if (existing) {
+            status.textContent = "এই প্রশ্নটি ইতিমধ্যে Question Bank-এ আছে। / This question is already in the question bank.";
+            return;
+        }
+
+        submit.disabled = true;
+        status.textContent = "প্রস্তাব পাঠানো হচ্ছে... / Submitting...";
+        try {
+            await addDoc(collection(db, "question_suggestions"), {
+                question,
+                normalizedQuestion,
+                language,
+                status: "pending",
+                submittedBy: auth.currentUser ? auth.currentUser.uid : null,
+                createdAt: serverTimestamp()
+            });
+            status.textContent = "ধন্যবাদ! Admin যাচাই করার পর অনুমোদিত প্রশ্ন যুক্ত হবে। / Thank you! The question will be added only after admin approval.";
+            form.reset();
+        } catch (error) {
+            console.error("Question suggestion submission failed:", error);
+            status.textContent = "প্রস্তাব পাঠানো যায়নি। পরে আবার চেষ্টা করুন। / Could not submit. Please try again later.";
+        } finally {
+            submit.disabled = false;
+        }
+    });
+}
+
+loadApprovedCommunityQuestions().then(loadAdminQuestionBankChanges);
+loadApprovedAnswerCorrections();
+loadMedicalSourcesAndClinicalReviews();
+setupQuestionSuggestionForm();
+
+
 // ===== Free Dengue Chatbot =====
 
 // Chatbot Elements
@@ -1174,11 +1366,37 @@ const chatbotForm = document.getElementById("chatbot-form");
 const chatbotInput = document.getElementById("chatbot-input");
 const chatbotMessages = document.getElementById("chatbot-messages");
 
+function scrollChatToLatest() {
+    if (!chatbotMessages) return;
+    const scroll = () => {
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    };
+    if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => requestAnimationFrame(scroll));
+    } else {
+        scroll();
+    }
+}
+
+function syncChatbotStarterVisibility() {
+    const starter = document.getElementById("chatbot-starter-questions");
+    if (!starter || !chatbotMessages) return;
+    const hasUserMessage = Boolean(chatbotMessages.querySelector(".user-message"));
+    starter.hidden = hasUserMessage;
+    starter.setAttribute("aria-hidden", String(hasUserMessage));
+    if (hasUserMessage) {
+        // Inline display also protects against older cached CSS overriding [hidden].
+        starter.style.setProperty("display", "none", "important");
+    } else {
+        starter.style.removeProperty("display");
+    }
+}
+
 
 // Open Chatbot
 if (chatbotToggle && chatbotWindow) {
     chatbotToggle.addEventListener("click", function () {
-        chatbotWindow.style.display = "block";
+        chatbotWindow.style.display = "flex";
         chatbotToggle.style.display = "none";
         chatbotInput.focus();
     });
@@ -1195,29 +1413,429 @@ if (chatbotClose && chatbotWindow) {
 
 
 // Add Message
-function addChatMessage(message, className) {
+function addChatMessage(message, className, shouldSave = true) {
     const messageElement = document.createElement("div");
     messageElement.className = className;
+    messageElement.dataset.chatHistoryItem = "true";
+    messageElement.dataset.chatText = String(message || "");
     messageElement.style.whiteSpace = "pre-line";
     messageElement.textContent = className === "bot-message"
-    ? message
-        .replace(/([০-৯0-9]+)[.।]\s*/g, "\n$1. ")
-        .trim()
-    : message;
+        ? String(message || "").replace(/([০-৯0-9]+)[.।]\s*/g, "\n$1. ").trim()
+        : String(message || "");
+    if (className === "bot-message") addChatbotSpeechButton(messageElement, message);
     chatbotMessages.appendChild(messageElement);
-    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-
+    scrollChatToLatest();
+    if (shouldSave) saveLocalChatHistory();
     return messageElement;
 }
 
+// Task 38: chat history is opt-in and remains only in this browser.
+const CHAT_HISTORY_KEY = "smartDengueLocalChatHistoryV1";
+const CHAT_HISTORY_CONSENT_KEY = "smartDengueLocalChatHistoryConsentV1";
+function saveLocalChatHistory() {
+    const toggle = document.getElementById("chatbot-save-history");
+    if (!toggle || !toggle.checked || !chatbotMessages) return;
+    try {
+        const records = [...chatbotMessages.querySelectorAll('[data-chat-history-item="true"]')]
+            .map(item => ({ role: item.classList.contains("user-message") ? "user" : "bot", text: String(item.dataset.chatText || "").slice(0, 3000) }))
+            .slice(-50);
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(records));
+    } catch (error) {
+        console.warn("Local chat history could not be saved:", error);
+    }
+}
+function setupLocalChatHistory() {
+    const toggle = document.getElementById("chatbot-save-history");
+    const clear = document.getElementById("chatbot-clear-history");
+    const status = document.getElementById("chatbot-history-status");
+    if (!toggle || !clear || !chatbotMessages) return;
+    try {
+        toggle.checked = localStorage.getItem(CHAT_HISTORY_CONSENT_KEY) === "true";
+        if (toggle.checked) {
+            const records = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
+            if (Array.isArray(records)) records.slice(-50).forEach(record => {
+                if (record && ["user", "bot"].includes(record.role) && typeof record.text === "string") {
+                    addChatMessage(record.text, record.role === "user" ? "user-message" : "bot-message", false);
+                }
+            });
+            if (status) status.textContent = "Saved locally on this device.";
+        }
+    } catch (error) {
+        console.warn("Local chat history could not be restored:", error);
+        try { localStorage.removeItem(CHAT_HISTORY_KEY); } catch (_) { /* storage may be disabled */ }
+    }
+    toggle.addEventListener("change", () => {
+        try {
+            localStorage.setItem(CHAT_HISTORY_CONSENT_KEY, String(toggle.checked));
+            if (toggle.checked) {
+                saveLocalChatHistory();
+                if (status) status.textContent = "Chat history saving is on for this browser only.";
+            } else {
+                localStorage.removeItem(CHAT_HISTORY_KEY);
+                if (status) status.textContent = "Local chat history saving is off; saved history was cleared.";
+            }
+        } catch (error) {
+            toggle.checked = false;
+            if (status) status.textContent = "This browser does not allow local storage; chat history was not saved.";
+        }
+    });
+    clear.addEventListener("click", () => {
+        try {
+            localStorage.removeItem(CHAT_HISTORY_KEY);
+            chatbotMessages.querySelectorAll('[data-chat-history-item="true"]').forEach(item => item.remove());
+            syncChatbotStarterVisibility();
+            if (typeof window.clearDengueConversationContext === "function") window.clearDengueConversationContext();
+            if (status) status.textContent = "Saved chat history and in-session topic context cleared from this browser.";
+        } catch (error) {
+            if (status) status.textContent = "This browser did not allow the saved history to be cleared.";
+        }
+    });
+}
+setupLocalChatHistory();
+syncChatbotStarterVisibility();
 
-// Detect Language
-function detectLanguage(text) {
-    const banglaPattern = /[\u0980-\u09FF]/;
-
-    return banglaPattern.test(text) ? "bn" : "en";
+const clearContextButton = document.getElementById("chatbot-clear-context");
+if (clearContextButton) {
+    clearContextButton.addEventListener("click", () => {
+        if (typeof window.clearDengueConversationContext === "function") window.clearDengueConversationContext();
+        const status = document.getElementById("chatbot-history-status");
+        if (status) status.textContent = "Conversation topic context reset. Your visible chat messages were not deleted.";
+    });
 }
 
+// Task 33: structured emergency-signal detection with negation handling.
+function addEmergencyAlert(messageElement, userQuestion) {
+    if (!messageElement || !userQuestion) return { isEmergency: false, signals: [] };
+    const basicResult = typeof window.detectDengueEmergencySignals === "function"
+        ? window.detectDengueEmergencySignals(userQuestion) : { isEmergency: false, signals: [] };
+    const advancedResult = window.DengueClinicalAssistant && window.DengueClinicalAssistant.detectWarningSigns
+        ? window.DengueClinicalAssistant.detectWarningSigns(userQuestion)
+        : { hasWarningSigns: false, signals: [] };
+    const mergedSignals = [...(basicResult.signals || []), ...(advancedResult.signals || [])]
+        .filter((item, index, list) => list.findIndex(candidate => candidate.id === item.id) === index);
+    const result = {
+        isEmergency: Boolean(basicResult.isEmergency || advancedResult.hasWarningSigns),
+        signals: mergedSignals,
+        level: mergedSignals.length ? "urgent" : "none"
+    };
+    if (!result.isEmergency) return result;
+    const language = detectLanguage(userQuestion);
+    const alert = document.createElement("div");
+    alert.className = "dengue-emergency-alert";
+    alert.setAttribute("role", "alert");
+    alert.setAttribute("aria-live", "assertive");
+    const heading = document.createElement("strong");
+    heading.textContent = language === "bn" ? "জরুরি সতর্কতা — এখনই চিকিৎসা নিন" : "Emergency warning — seek care now";
+    const message = document.createElement("p");
+    message.textContent = language === "bn"
+        ? "আপনার বার্তায় ডেঙ্গুর একটি বিপদসংকেতের উল্লেখ আছে। এটি রোগ নির্ণয় নয়। লক্ষণটি যদি এখন রোগীর থাকে, Chatbot-এর উত্তরের জন্য অপেক্ষা করবেন না—এখনই নিকটস্থ হাসপাতালের জরুরি বিভাগে যান বা জরুরি সহায়তা নিন।"
+        : "Your message mentions a dengue warning sign. This is not a diagnosis. If the symptom is happening now, do not wait for the chatbot—go to the nearest hospital emergency department or seek emergency help now.";
+    alert.append(heading, message);
+    messageElement.insertBefore(alert, messageElement.firstChild);
+    return result;
+}
+
+// Task 34: medicine safety prompts; no prescribing or personalized dosing.
+function addMedicineSafetyAlert(messageElement, userQuestion, answer) {
+    if (!messageElement || typeof window.detectDengueMedicineRisks !== "function") return;
+    const result = window.detectDengueMedicineRisks(userQuestion, answer);
+    if (!result.hasWarnings) return;
+    const language = detectLanguage(userQuestion);
+    const ids = new Set(result.warnings.map(item => item.id));
+    const alert = document.createElement("div");
+    alert.className = "dengue-medicine-alert";
+    alert.setAttribute("role", "note");
+    const heading = document.createElement("strong");
+    heading.textContent = language === "bn" ? "ওষুধ ব্যবহারে সতর্কতা" : "Medicine safety reminder";
+    const text = document.createElement("p");
+    if (ids.has("nsaid_bleeding_risk")) text.textContent = language === "bn"
+        ? "ডেঙ্গু সন্দেহ বা নিশ্চিত হলে Aspirin, Ibuprofen, Naproxen, Diclofenac ও অনুরূপ NSAID নিজে থেকে খাবেন না—রক্তপাতের ঝুঁকি বাড়তে পারে। আগে থেকে চিকিৎসকের দেওয়া Aspirin বা রক্ত পাতলা করার ওষুধ নিজে বন্ধ করবেন না; দ্রুত prescriber-এর সঙ্গে যোগাযোগ করুন।"
+        : "With suspected or confirmed dengue, do not self-medicate with aspirin, ibuprofen, naproxen, diclofenac or similar NSAIDs because bleeding risk may increase. Do not independently stop prescribed aspirin or blood thinners; contact the prescriber promptly.";
+    else if (ids.has("prescribed_anticoagulant_caution")) text.textContent = language === "bn"
+        ? "Warfarin, Apixaban, Rivaroxaban, Clopidogrel বা অন্য prescribed blood thinner নিজে থেকে বন্ধ বা পরিবর্তন করবেন না। ডেঙ্গু সন্দেহ হলে দ্রুত prescriber বা হাসপাতালে যোগাযোগ করুন, বিশেষত রক্তপাত থাকলে জরুরি বিভাগে যান।"
+        : "Do not independently stop or change warfarin, apixaban, rivaroxaban, clopidogrel or another prescribed blood thinner. If dengue is suspected, contact the prescriber or hospital promptly; bleeding requires emergency assessment.";
+    else if (ids.has("child_dose_requires_clinician")) text.textContent = language === "bn"
+        ? "শিশুর ওষুধের ডোজ বয়স, ওজন ও ওষুধের concentration-এর ওপর নির্ভর করে। এই Chatbot ব্যক্তিগত ডোজ দিতে পারে না—চিকিৎসক বা ফার্মাসিস্টের মাধ্যমে নিশ্চিত করুন।"
+        : "A child's dose depends on age, weight and product concentration. This chatbot cannot provide a personalized dose; confirm it with a clinician or pharmacist.";
+    else if (ids.has("paracetamol_dose_caution")) text.textContent = language === "bn"
+        ? "Paracetamol কেবল চিকিৎসকের পরামর্শ ও পণ্যের নির্দেশনা অনুযায়ী নিন। একই উপাদান থাকা একাধিক ওষুধ একসঙ্গে খাবেন না; অতিরিক্ত গ্রহণে লিভারের ক্ষতি হতে পারে।"
+        : "Use paracetamol only as advised by a clinician and according to the product label. Avoid multiple products containing the same ingredient; overdose can injure the liver.";
+    else if (ids.has("antibiotic_not_routine")) text.textContent = language === "bn"
+        ? "Antibiotic ডেঙ্গু ভাইরাসের চিকিৎসা নয় এবং সাধারণত ডেঙ্গুতে নিয়মিত প্রয়োজন হয় না। অন্য সংক্রমণ সন্দেহ হলে চিকিৎসক সিদ্ধান্ত নেবেন।"
+        : "Antibiotics do not treat dengue virus and are not routinely needed for dengue. A clinician should decide if a separate infection is suspected.";
+    else if (ids.has("steroid_not_routine")) text.textContent = language === "bn"
+        ? "ডেঙ্গুতে Steroid নিজে থেকে শুরু বা বন্ধ করবেন না। দীর্ঘদিনের prescribed steroid থাকলে prescriber-এর পরামর্শ নিন।"
+        : "Do not start or stop steroids yourself for dengue. If you take long-term prescribed steroids, contact your prescriber.";
+    else text.textContent = language === "bn"
+        ? "ওষুধের সিদ্ধান্ত রোগীর অবস্থা ও অন্য রোগের ওপর নির্ভর করে। ব্যক্তিগত পরামর্শের জন্য চিকিৎসকের সঙ্গে কথা বলুন।"
+        : "Medication decisions depend on the patient's condition and other illnesses. Ask a clinician for individualized advice.";
+    alert.append(heading, text);
+    messageElement.appendChild(alert);
+}
+
+// Tasks 32 + 36: reference links and transparent clinical-review freshness.
+function addMedicalReviewAndReferences(messageElement, userQuestion) {
+    if (!messageElement) return;
+    const matches = typeof window.getTopDengueMatches === "function" ? window.getTopDengueMatches(userQuestion, 1) : [];
+    const best = matches[0] || null;
+    if (!best) return;
+    const language = detectLanguage(userQuestion);
+    const correction = typeof window.getApprovedAnswerOverride === "function" ? window.getApprovedAnswerOverride(best.question) : null;
+    const effectiveMatch = correction ? { ...best, answerBn: correction.answerBn, answerEn: correction.answerEn } : best;
+    const review = typeof window.getMedicalAnswerReviewStatus === "function"
+        ? window.getMedicalAnswerReviewStatus(effectiveMatch) : { status: "unreviewed" };
+    const status = document.createElement("div");
+    status.className = "medical-review-status";
+    if (review.status === "verified") {
+        const reviewer = review.review && review.review.reviewerName ? ` · ${review.review.reviewerName}` : "";
+        const reviewedDate = review.review && review.review.reviewedAtClient ? new Date(review.review.reviewedAtClient).toLocaleDateString() : "";
+        const dateText = reviewedDate ? ` · ${reviewedDate}` : "";
+        status.textContent = language === "bn" ? `চিকিৎসক দ্বারা পর্যালোচিত${reviewer}${dateText}। এটি ব্যক্তিগত চিকিৎসা পরামর্শ নয়।` : `Clinician-reviewed${reviewer}${dateText}. This is not individualized medical advice.`;
+    } else if (review.status === "outdated") {
+        status.textContent = language === "bn" ? "সতর্কতা: এই উত্তরের চিকিৎসক-পর্যালোচনা পুরোনো বা উত্তর পরিবর্তিত হয়েছে। সর্বশেষ নির্দেশনার জন্য চিকিৎসকের সঙ্গে নিশ্চিত করুন।" : "Caution: this answer's clinical review is overdue or the answer has changed. Confirm current guidance with a clinician.";
+        status.classList.add("is-outdated");
+    } else {
+        status.textContent = language === "bn" ? "চিকিৎসক-পর্যালোচনার অনুমোদন রেকর্ডে পাওয়া যায়নি। তথ্যটি শিক্ষামূলক; চিকিৎসার সিদ্ধান্ত চিকিৎসকের সঙ্গে নিন।" : "No clinician approval is recorded for this answer. This is educational information; make care decisions with a clinician.";
+    }
+    messageElement.appendChild(status);
+    const refs = typeof window.getMedicalReferencesForAnswer === "function" ? window.getMedicalReferencesForAnswer(effectiveMatch) : [];
+    if (!refs.length) return;
+    const wrapper = document.createElement("div"); wrapper.className = "medical-reference-list";
+    const title = document.createElement("strong"); title.textContent = language === "bn" ? "তথ্যসূত্র" : "Reference links"; wrapper.appendChild(title);
+    refs.forEach(source => {
+        const link = document.createElement("a"); link.href = source.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+        const freshness = source.stale ? (language === "bn" ? " · পর্যালোচনার সময় পেরিয়েছে" : " · source review overdue") : "";
+        const published = source.publicationDate ? ` · Published ${source.publicationDate}` : "";
+        link.textContent = `${source.organization || "Source"}: ${source.title}${published}${freshness}`; wrapper.appendChild(link);
+    });
+    const note = document.createElement("small");
+    note.textContent = language === "bn" ? "লিংকগুলো আরও পড়ার জন্য। এগুলো দেখানো মানেই এই নির্দিষ্ট উত্তর চিকিৎসক যাচাই করেছেন—এমন নয়।" : "Links are for further reading; their display does not mean this specific answer has been clinically verified.";
+    wrapper.appendChild(note); messageElement.appendChild(wrapper);
+}
+
+// Task 35: recommend only Admin-verified doctor profiles.
+async function addDoctorRecommendation(messageElement, userQuestion, emergencyResult) {
+    if (!messageElement) return;
+    const asksForDoctor = /doctor|physician|specialist|hospital|appointment|consult|ডাক্তার|চিকিৎসক|হাসপাতাল|অ্যাপয়েন্টমেন্ট|অ্যাপয়েন্টমেন্ট/i.test(String(userQuestion || ""));
+    if (!asksForDoctor && !(emergencyResult && emergencyResult.isEmergency)) return;
+    const language = detectLanguage(userQuestion);
+    const panel = document.createElement("div"); panel.className = "chatbot-doctor-recommendation";
+    const heading = document.createElement("strong");
+    heading.textContent = emergencyResult && emergencyResult.isEmergency ? (language === "bn" ? "জরুরি চিকিৎসা" : "Emergency care") : (language === "bn" ? "যাচাইকৃত চিকিৎসক" : "Verified clinicians");
+    panel.appendChild(heading);
+    if (emergencyResult && emergencyResult.isEmergency) {
+        const urgent = document.createElement("p"); urgent.textContent = language === "bn" ? "Appointment বুক করার জন্য অপেক্ষা করবেন না। নিকটস্থ হাসপাতালের জরুরি বিভাগে যান।" : "Do not wait for an appointment. Go to the nearest hospital emergency department.";
+        panel.appendChild(urgent); messageElement.appendChild(panel); return;
+    }
+    try { if (window.doctorsReady && typeof window.doctorsReady.then === "function") await window.doctorsReady; } catch (error) { console.warn("Doctor list load failed:", error); }
+    const doctors = Array.isArray(window.chatbotVerifiedDoctors) ? window.chatbotVerifiedDoctors : [];
+    if (!doctors.length) {
+        const note = document.createElement("p"); note.textContent = language === "bn" ? "এখনো কোনো চিকিৎসককে Chatbot সুপারিশের জন্য Admin কর্তৃক যাচাইকৃত হিসেবে চিহ্নিত করা হয়নি। নিকটস্থ হাসপাতাল বা সরকারি স্বাস্থ্যসেবা কেন্দ্রের সঙ্গে যোগাযোগ করুন।" : "No doctor profile has yet been Admin-verified for chatbot recommendations. Contact a nearby hospital or public health service.";
+        panel.appendChild(note); messageElement.appendChild(panel); return;
+    }
+    doctors.slice(0, 3).forEach(doctor => {
+        const card = document.createElement("div"); card.className = "chatbot-doctor-card";
+        const name = document.createElement("strong"); name.textContent = doctor.name || "Verified clinician";
+        const details = document.createElement("p"); details.textContent = [doctor.specialization, doctor.hospital, doctor.address].filter(Boolean).join(" · ");
+        card.append(name, details);
+        if (doctor.phone && doctor.phone !== "Contact hospital") { const phone = document.createElement("p"); phone.textContent = `Contact: ${doctor.phone}`; card.appendChild(phone); }
+        if (doctor.id && typeof window.bookAppointment === "function") {
+            const button = document.createElement("button"); button.type = "button"; button.textContent = language === "bn" ? "অ্যাপয়েন্টমেন্ট বুক করুন" : "Book appointment";
+            button.addEventListener("click", () => window.bookAppointment(String(doctor.id))); card.appendChild(button);
+        }
+        panel.appendChild(card);
+    });
+    messageElement.appendChild(panel);
+}
+
+
+// Task 29 + 39: retrieval confidence and structured feedback reasons.
+function addAnswerQualityAndFeedback(messageElement, userQuestion, answer) {
+    if (!messageElement) return;
+    const quality = typeof window.getChatbotAnswerQuality === "function" ? window.getChatbotAnswerQuality(userQuestion) : { level: "low", score: 0, intent: "Unmatched", matchCount: 0 };
+    const language = detectLanguage(userQuestion);
+    const note = document.createElement("div"); note.className = "chatbot-quality-note";
+    const level = language === "bn" ? ({ high: "উচ্চ", medium: "মাঝারি", low: "কম" }[quality.level] || "কম") : ({ high: "High", medium: "Medium", low: "Low" }[quality.level] || "Low");
+    const label = document.createElement("span");
+    label.textContent = language === "bn" ? `প্রশ্নের মিল: ${level} (${quality.score}%) · বিষয়: ${quality.intent} · এটি চিকিৎসার নির্ভুলতার স্কোর নয়` : `Retrieval confidence: ${level} (${quality.score}% text match) · Topic: ${quality.intent} · Not medical certainty`;
+    note.appendChild(label);
+    if (quality.level !== "high") {
+        const caution = document.createElement("p");
+        caution.textContent = quality.level === "low"
+            ? (language === "bn" ? "প্রশ্নের সঙ্গে নির্ভরযোগ্য মিল পাওয়া যায়নি। উত্তরটি সাধারণ বা অসম্পূর্ণ হতে পারে—আরও নির্দিষ্ট করে লিখুন এবং চিকিৎসা সিদ্ধান্তের জন্য চিকিৎসকের পরামর্শ নিন।" : "No reliable question match was found. The response may be general or incomplete—rephrase your question and consult a clinician for care decisions.")
+            : (language === "bn" ? "একাধিক কাছাকাছি বিষয় পাওয়া গেছে। আপনার পরিস্থিতি আলাদা হলে প্রশ্নটি আরও স্পষ্ট করুন; জরুরি লক্ষণ থাকলে হাসপাতালে যান।" : "Several related topics were found. Clarify your question if your situation differs; seek urgent care for warning signs.");
+        note.appendChild(caution);
+    }
+    const disclosure = document.createElement("small"); disclosure.textContent = language === "bn" ? "আপনার প্রশ্ন পারফরম্যান্স বিশ্লেষণের জন্য সংরক্ষিত হতে পারে। চ্যাট ইতিহাস সংরক্ষণ আলাদা এবং ডিফল্টভাবে বন্ধ।" : "Your question may be stored for performance analytics. Local chat-history saving is separate and off by default.";
+    note.appendChild(disclosure); messageElement.appendChild(note);
+
+    const feedback = document.createElement("div"); feedback.className = "chatbot-feedback"; feedback.setAttribute("role", "group");
+    const prompt = document.createElement("span"); prompt.className = "chatbot-feedback-prompt"; prompt.textContent = language === "bn" ? "এই উত্তরটি কি সহায়ক ছিল?" : "Was this answer helpful?"; feedback.appendChild(prompt);
+    const status = document.createElement("span"); status.className = "chatbot-feedback-status"; status.setAttribute("aria-live", "polite");
+    const reasonPanel = document.createElement("div"); reasonPanel.className = "chatbot-feedback-reason-panel"; reasonPanel.hidden = true;
+    const reasonLabel = document.createElement("label"); reasonLabel.textContent = language === "bn" ? "কেন সহায়ক হয়নি?" : "What was wrong with this answer?";
+    const reason = document.createElement("select");
+    const choices = language === "bn"
+        ? [["", "কারণ নির্বাচন করুন (ঐচ্ছিক)"], ["inaccurate", "তথ্য ভুল মনে হয়েছে"], ["irrelevant", "প্রশ্নের সঙ্গে মেলেনি"], ["unclear", "বোঝা কঠিন"], ["outdated", "তথ্য পুরোনো"], ["safety_concern", "নিরাপত্তা/চিকিৎসা-ঝুঁকি"], ["other", "অন্যান্য"]]
+        : [["", "Choose a reason (optional)"], ["inaccurate", "Possibly inaccurate"], ["irrelevant", "Did not answer my question"], ["unclear", "Hard to understand"], ["outdated", "Outdated information"], ["safety_concern", "Medical safety concern"], ["other", "Other"]];
+    choices.forEach(([value, text]) => { const option = document.createElement("option"); option.value = value; option.textContent = text; reason.appendChild(option); });
+    reasonLabel.appendChild(reason);
+    const comment = document.createElement("textarea"); comment.maxLength = 300; comment.rows = 2; comment.placeholder = language === "bn" ? "অতিরিক্ত মন্তব্য (ঐচ্ছিক, সর্বোচ্চ ৩০০ অক্ষর; নাম/ফোন দেবেন না)" : "Optional comment (max 300 characters; no names or phone numbers)";
+    const send = document.createElement("button"); send.type = "button"; send.textContent = language === "bn" ? "মতামত পাঠান" : "Submit feedback";
+    reasonPanel.append(reasonLabel, comment, send);
+
+    async function submitRating(rating) {
+        if (feedback.dataset.submitted === "true") return;
+        feedback.querySelectorAll("button").forEach(button => button.disabled = true);
+        const matched = window.getTopDengueMatches ? window.getTopDengueMatches(userQuestion, 1)[0] : null;
+        const record = {
+            question: String(userQuestion || "").slice(0, 500), answerPreview: String(answer || "").slice(0, 400),
+            matchedQuestion: String(matched && matched.question || userQuestion || "").slice(0, 300), rating,
+            feedbackReason: rating === "not_helpful" ? reason.value : "", feedbackComment: rating === "not_helpful" ? comment.value.trim().slice(0, 300) : "",
+            intent: String(quality.intent || "Unmatched").slice(0, 80), matchScore: quality.score, matchLevel: quality.level,
+            language: language === "bn" ? "bn" : "en", userId: auth.currentUser ? auth.currentUser.uid : null,
+            createdAt: serverTimestamp(), createdAtClient: new Date().toISOString()
+        };
+        try {
+            const feedbackRef = await addDoc(collection(db, "chatbot_feedback"), record);
+            let issueSaved = true;
+            if (rating === "not_helpful") {
+                try {
+                    await addDoc(collection(db, "chatbot_answer_issues"), {
+                        feedbackId: feedbackRef.id, question: record.question, sourceQuestion: record.matchedQuestion,
+                        answerPreview: record.answerPreview, matchedAnswerBn: String(matched && matched.answerBn || "").slice(0, 4000),
+                        matchedAnswerEn: String(matched && matched.answerEn || "").slice(0, 4000), intent: record.intent,
+                        matchScore: record.matchScore, language: record.language, feedbackReason: record.feedbackReason,
+                        feedbackComment: record.feedbackComment, status: "pending", reporterUid: record.userId,
+                        createdAt: serverTimestamp(), createdAtClient: record.createdAtClient
+                    });
+                } catch (error) { issueSaved = false; console.error("Answer issue queue save failed:", error); }
+            }
+            feedback.dataset.submitted = "true"; reasonPanel.hidden = true;
+            status.textContent = rating === "not_helpful"
+                ? (language === "bn" ? (issueSaved ? "ধন্যবাদ! মতামতটি Admin Review Queue-তে পাঠানো হয়েছে।" : "Feedback সংরক্ষিত হয়েছে, তবে Review Queue-তে পাঠানো যায়নি।") : (issueSaved ? "Thank you! Your feedback was sent for review." : "Feedback saved, but the review item could not be created."))
+                : (language === "bn" ? "ধন্যবাদ! আপনার মতামত সংরক্ষণ করা হয়েছে।" : "Thank you! Your feedback was saved.");
+        } catch (error) {
+            console.error("Chatbot feedback save failed:", error);
+            try {
+                const key = "smartDengueFeedbackPending"; const pending = JSON.parse(localStorage.getItem(key) || "[]");
+                pending.push({ ...record, createdAt: null, savedLocally: true }); localStorage.setItem(key, JSON.stringify(pending.slice(-50)));
+                feedback.dataset.submitted = "true"; reasonPanel.hidden = true;
+                status.textContent = language === "bn" ? "সার্ভারে পাঠানো যায়নি। মতামতটি এই ব্রাউজারে সাময়িকভাবে রাখা হয়েছে।" : "Could not reach the server. Feedback was kept temporarily in this browser only.";
+            } catch (storageError) {
+                feedback.querySelectorAll("button").forEach(button => button.disabled = false);
+                status.textContent = language === "bn" ? "মতামত সংরক্ষণ করা যায়নি। পরে আবার চেষ্টা করুন।" : "Feedback could not be saved. Please try again later.";
+            }
+        }
+    }
+    function makeButton(rating, label, onClick) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chatbot-feedback-button";
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        return button;
+    }
+    const helpful = makeButton("helpful", language === "bn" ? "👍 সহায়ক" : "👍 Helpful", () => submitRating("helpful"));
+    const notHelpful = makeButton("not_helpful", language === "bn" ? "👎 সহায়ক নয়" : "👎 Not helpful", () => { reasonPanel.hidden = false; notHelpful.disabled = true; });
+    send.addEventListener("click", () => submitRating("not_helpful"));
+    feedback.append(helpful, notHelpful, reasonPanel, status); messageElement.appendChild(feedback);
+}
+
+// Task 30: clickable follow-up prompts continue the current conversation.
+function addSuggestedFollowUps(messageElement, userQuestion) {
+    if (!messageElement || typeof window.getChatbotSuggestedFollowUps !== "function") return;
+    const suggestions = window.getChatbotSuggestedFollowUps(userQuestion, 3); if (!suggestions.length) return;
+    const wrapper = document.createElement("div"); wrapper.className = "chatbot-followups";
+    const heading = document.createElement("strong"); heading.textContent = detectLanguage(userQuestion) === "bn" ? "এরপর জানতে পারেন" : "You can also ask"; wrapper.appendChild(heading);
+    suggestions.forEach(question => { const button = document.createElement("button"); button.type = "button"; button.textContent = question; button.addEventListener("click", () => { if (!chatbotInput || !chatbotForm) return; chatbotInput.value = question; chatbotForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); }); wrapper.appendChild(button); });
+    messageElement.appendChild(wrapper);
+}
+
+
+// Task 3: show the 15 closest question-bank matches under each bot answer.
+function addTopMatchesDisclosure(messageElement, userQuestion) {
+    if (!messageElement || typeof window.getTopDengueMatches !== "function") return;
+    const matches = window.getTopDengueMatches(userQuestion, 15);
+    if (!matches.length) return;
+
+    const language = detectLanguage(userQuestion);
+    const wrapper = document.createElement("div");
+    wrapper.className = "top-matches-wrapper";
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "top-matches-toggle";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.textContent = language === "bn"
+        ? `আরও ${matches.length}টি মিল পাওয়া প্রশ্ন দেখুন`
+        : `View ${matches.length} similar questions`;
+
+    const list = document.createElement("ol");
+    list.className = "top-matches-list";
+    list.hidden = true;
+
+    const topicLabels = language === "bn"
+        ? { symptoms:"লক্ষণ", prevention:"প্রতিরোধ", tests:"পরীক্ষা", platelets:"প্লেটলেট", food:"খাবার", medicine:"ওষুধ", recovery:"সুস্থতা", warning:"বিপদের লক্ষণ", transmission:"সংক্রমণ", general:"সাধারণ" }
+        : { symptoms:"Symptoms", prevention:"Prevention", tests:"Tests", platelets:"Platelets", food:"Food", medicine:"Medicine", recovery:"Recovery", warning:"Warning signs", transmission:"Transmission", general:"General" };
+
+    matches.forEach(match => {
+        const item = document.createElement("li");
+        item.className = "top-match-item";
+        const question = document.createElement("span");
+        question.className = "top-match-question";
+        question.textContent = match.question;
+        const meta = document.createElement("span");
+        meta.className = "top-match-meta";
+        meta.textContent = `${topicLabels[match.topic] || match.topic} · ${match.similarityPercent}% ${language === "bn" ? "মিল" : "match"}`;
+        const reason = document.createElement("small");
+        reason.className = "top-match-reason";
+        const signalLabels = language === "bn"
+            ? { exact: "হুবহু প্রশ্ন", concept: "অর্থগত মিল", spelling: "বানান/উচ্চারণের মিল", keywords: "গুরুত্বপূর্ণ শব্দের মিল", "weak-overlap": "আংশিক শব্দের মিল" }
+            : { exact: "Exact wording", concept: "Meaning/concept overlap", spelling: "Spelling or wording similarity", keywords: "Keyword overlap", "weak-overlap": "Partial wording overlap" };
+        const signals = Array.isArray(match.matchSignals) ? match.matchSignals : [];
+        reason.textContent = (language === "bn" ? "মিলের কারণ: " : "Why it matched: ") +
+            (signals.length ? signals.map(signal => signalLabels[signal] || signal).join(language === "bn" ? " + " : " + ")
+                : (language === "bn" ? "শব্দের মিল" : "Text overlap"));
+        item.appendChild(question);
+        item.appendChild(meta);
+        item.appendChild(reason);
+        list.appendChild(item);
+    });
+
+    const note = document.createElement("p");
+    note.className = "top-matches-note";
+    note.textContent = language === "bn"
+        ? "নোট: এই স্কোর শুধু প্রশ্নের ভাষাগত মিল বোঝায়; এটি রোগ নির্ণয় বা চিকিৎসার নির্ভুলতার স্কোর নয়।"
+        : "Note: Scores indicate text similarity only, not diagnostic or medical accuracy.";
+
+    toggle.addEventListener("click", function () {
+        const willOpen = list.hidden;
+        list.hidden = !willOpen;
+        toggle.setAttribute("aria-expanded", String(willOpen));
+        toggle.textContent = willOpen
+            ? (language === "bn" ? "মিল পাওয়া প্রশ্নগুলো লুকান" : "Hide similar questions")
+            : (language === "bn" ? `আরও ${matches.length}টি মিল পাওয়া প্রশ্ন দেখুন` : `View ${matches.length} similar questions`);
+    });
+
+    wrapper.appendChild(toggle);
+    wrapper.appendChild(list);
+    wrapper.appendChild(note);
+    messageElement.appendChild(wrapper);
+}
+
+
+// Task 42 / Task 67: use the shared Bangla/English/Banglish detector.
+function detectLanguage(text) {
+    if (typeof window.detectDengueLanguage === "function") {
+        return window.detectDengueLanguage(text);
+    }
+    const value = String(text || "").toLowerCase().normalize("NFKC");
+    if (/[\u0980-\u09FF]/.test(value)) return "bn";
+    const tokens = value.match(/[a-z]+/g) || [];
+    const banglish = new Set(["ki","keno","kivabe","kibhabe","amr","amar","ami","apni","tumi","betha","batha","jor","jhor","matha","shorir","sorir","rokto","bomi","oshud","osud","khabar","khaoa","komse","komche","hoise","tahole","ekhon","ache","ase"]);
+    return tokens.some(token => banglish.has(token)) ? "bn" : "en";
+}
 
 // Normalize Question
 function normalizeQuestion(text) {
@@ -1464,7 +2082,183 @@ function getDengueAnswer(message) {
 }
 
 
+// Task 15: record one lightweight analytics event per submitted chatbot question.
+// The raw question is retained to calculate popular questions; no answer body is stored.
+async function recordChatbotQueryEvent(userQuestion) {
+    try {
+        const matches = typeof window.getTopDengueMatches === "function"
+            ? window.getTopDengueMatches(userQuestion, 15)
+            : [];
+        const best = matches[0] || null;
+        const quality = typeof window.getChatbotAnswerQuality === "function"
+            ? window.getChatbotAnswerQuality(userQuestion)
+            : { score: 0, level: "low", intent: "Unmatched" };
+        const resolvedQuery = typeof window.resolveDengueFollowUpQuery === "function"
+            ? window.resolveDengueFollowUpQuery(userQuestion)
+            : userQuestion;
+        const contextUsed = String(resolvedQuery) !== String(userQuestion);
+
+        await addDoc(collection(db, "chatbot_query_events"), {
+            question: String(userQuestion || "").slice(0, 500),
+            matchedQuestion: String(best && best.question || "").slice(0, 300),
+            topic: String(best && best.topic || quality.intent || "Unmatched").slice(0, 80),
+            matchScore: Math.max(0, Math.min(100, Number(quality.score) || 0)),
+            matchLevel: ["high", "medium", "low"].includes(quality.level) ? quality.level : "low",
+            language: detectLanguage(userQuestion) === "bn" ? "bn" : "en",
+            isUnmatched: !best || quality.level === "low",
+            topMatchCount: matches.length,
+            contextUsed,
+            userId: auth.currentUser ? auth.currentUser.uid : null,
+            createdAt: serverTimestamp(),
+            createdAtClient: new Date().toISOString()
+        });
+    } catch (error) {
+        console.warn("Chatbot analytics event could not be saved:", error);
+    }
+}
+
+
+// Task 40 / Task 66: browser-provided voice input; no custom paid speech API is integrated. Browser/provider processing may vary.
+function setupChatbotVoiceInput() {
+    const button = document.getElementById("chatbot-voice-button");
+    const status = document.getElementById("chatbot-voice-status");
+    if (!button || !chatbotInput) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        button.disabled = true;
+        button.title = "Voice input is not supported in this browser";
+        if (status) status.textContent = "Voice input is not supported in this browser. You can type your question.";
+        return;
+    }
+    let recognition = null;
+    let listening = false;
+    button.addEventListener("click", () => {
+        if (listening && recognition) { recognition.stop(); return; }
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        const languageChoice = document.getElementById("chatbot-voice-language")?.value || "auto";
+        recognition.lang = languageChoice === "auto"
+            ? (chatbotInput.value.trim() ? (detectLanguage(chatbotInput.value) === "bn" ? "bn-BD" : "en-US") : "bn-BD")
+            : languageChoice;
+        recognition.onstart = () => {
+            listening = true;
+            button.textContent = "⏹";
+            button.setAttribute("aria-label", "Stop voice input");
+            if (status) status.textContent = recognition.lang === "bn-BD" ? "শুনছি… প্রশ্নটি বলুন।" : "Listening… speak your question.";
+        };
+        recognition.onresult = event => {
+            const transcript = Array.from(event.results || []).map(result => result[0]?.transcript || "").join(" ").trim();
+            if (transcript) {
+                chatbotInput.value = transcript.slice(0, 300);
+                chatbotInput.focus();
+                if (typeof updateChatbotLanguageStatus === "function") updateChatbotLanguageStatus();
+                if (status) status.textContent = detectLanguage(transcript) === "bn"
+                    ? "কথা থেকে লেখা তৈরি হয়েছে। পাঠানোর আগে দেখে নিন।"
+                    : "Transcript ready. Review it before sending.";
+            }
+        };
+        recognition.onerror = event => {
+            if (status) status.textContent = event.error === "not-allowed"
+                ? "Microphone permission was denied. Allow microphone access or type your question."
+                : `Voice input error: ${event.error || "unknown"}. Please type your question.`;
+        };
+        recognition.onend = () => {
+            listening = false;
+            button.textContent = "🎙️";
+            button.setAttribute("aria-label", "Speak your question");
+        };
+        try { recognition.start(); }
+        catch (error) {
+            listening = false;
+            button.textContent = "🎙️";
+            if (status) status.textContent = "Voice input could not start. Try again or type your question.";
+        }
+    });
+}
+
+// Task 41 / Task 66: use the browser/device speech synthesis engine; no custom speech API is called by this app.
+let activeChatbotSpeechButton = null;
+function speakChatbotAnswer(message, button = null) {
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return false;
+    if (activeChatbotSpeechButton && activeChatbotSpeechButton !== button) activeChatbotSpeechButton.textContent = "🔊 Listen";
+    if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+    activeChatbotSpeechButton = button;
+    const utterance = new SpeechSynthesisUtterance(String(message || "").slice(0, 5000));
+    utterance.lang = detectLanguage(message) === "bn" ? "bn-BD" : "en-US";
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(voice => voice.lang && voice.lang.toLowerCase().startsWith(utterance.lang.slice(0, 2)));
+    if (preferred) utterance.voice = preferred;
+    if (button) {
+        utterance.onstart = () => { button.textContent = "⏹ Stop"; };
+        utterance.onend = utterance.onerror = () => {
+            button.textContent = "🔊 Listen";
+            if (activeChatbotSpeechButton === button) activeChatbotSpeechButton = null;
+        };
+    }
+    window.speechSynthesis.speak(utterance);
+    return true;
+}
+
+function addChatbotSpeechButton(messageElement, message) {
+    if (!messageElement || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chatbot-speech-button";
+    button.textContent = "🔊 Listen";
+    button.setAttribute("aria-label", "Read this answer aloud");
+    button.addEventListener("click", () => {
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            button.textContent = "🔊 Listen";
+            if (activeChatbotSpeechButton === button) activeChatbotSpeechButton = null;
+            return;
+        }
+        speakChatbotAnswer(message, button);
+    });
+    messageElement.appendChild(button);
+}
+
+// Task 44: clickable starter prompts use the existing submit pipeline.
+function setupChatbotStarterQuestions() {
+    const wrapper = document.getElementById("chatbot-starter-questions");
+    if (!wrapper || !chatbotForm || !chatbotInput) return;
+    wrapper.querySelectorAll("[data-starter-question]").forEach(button => {
+        button.addEventListener("click", () => {
+            chatbotInput.value = button.dataset.starterQuestion || "";
+            if (typeof updateChatbotLanguageStatus === "function") updateChatbotLanguageStatus();
+            chatbotForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+    });
+}
+
+// Task 67: show the language hint without changing or translating user text.
+function updateChatbotLanguageStatus() {
+    const status = document.getElementById("chatbot-language-status");
+    if (!status || !chatbotInput) return;
+    const value = chatbotInput.value.trim();
+    if (!value) {
+        status.textContent = "Language auto-detection ready / ভাষা স্বয়ংক্রিয়ভাবে শনাক্ত হবে";
+        return;
+    }
+    const details = typeof window.detectDengueLanguageDetails === "function"
+        ? window.detectDengueLanguageDetails(value)
+        : { language: detectLanguage(value), confidence: null, mixed: false };
+    const languageLabel = details.language === "bn"
+        ? (details.mixed ? "Bangla/Banglish or mixed input" : "Bangla/Banglish")
+        : "English";
+    const confidence = Number.isFinite(details.confidence)
+        ? ` · ${Math.round(details.confidence * 100)}% language-hint confidence` : "";
+    status.textContent = `Detected language: ${languageLabel}${confidence}. This is only a language hint.`;
+}
+
 // Send Message
+setupChatbotVoiceInput();
+setupChatbotStarterQuestions();
+if (chatbotInput) chatbotInput.addEventListener("input", updateChatbotLanguageStatus);
+updateChatbotLanguageStatus();
+
 if (chatbotForm) {
 
     chatbotForm.addEventListener("submit", function (event) {
@@ -1476,14 +2270,35 @@ if (chatbotForm) {
         if (!message) return;
 
         addChatMessage(message, "user-message");
+        syncChatbotStarterVisibility();
 
         chatbotInput.value = "";
+        updateChatbotLanguageStatus();
 
-       const answer = getDengueBankAnswer(message);
+        const answer = getDengueBankAnswer(message);
+        // Fire-and-forget: do not delay the answer while analytics are written.
+        recordChatbotQueryEvent(message);
 
-        addChatMessage(answer, "bot-message");
+        const botMessageElement = addChatMessage(answer, "bot-message");
+        const emergencyResult = addEmergencyAlert(botMessageElement, message);
+        addMedicineSafetyAlert(botMessageElement, message, answer);
+        addAnswerQualityAndFeedback(botMessageElement, message, answer);
+        addMedicalReviewAndReferences(botMessageElement, message);
+        addSuggestedFollowUps(botMessageElement, message);
+        addDoctorRecommendation(botMessageElement, message, emergencyResult);
+        addTopMatchesDisclosure(botMessageElement, message);
 
-        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        const autoSpeak = document.getElementById("chatbot-auto-speak");
+        if (autoSpeak && autoSpeak.checked) {
+            const spokenText = emergencyResult.isEmergency
+                ? (detectLanguage(message) === "bn"
+                    ? "জরুরি সতর্কতা। এখনই চিকিৎসা নিন। " + answer
+                    : "Emergency warning. Seek medical care now. " + answer)
+                : answer;
+            speakChatbotAnswer(spokenText);
+        }
+
+        scrollChatToLatest();
 
         chatbotInput.focus();
     });

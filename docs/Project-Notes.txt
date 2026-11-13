@@ -1,0 +1,63 @@
+
+---
+BATCH 2 (TASK 29–39) — 2026-11-13
+- Added retrieval confidence tiers, low-match fallback, and topic-aware follow-up prompts.
+- Added deterministic medical-answer safety audit, official source registry, source links, answer fingerprinting and stale-review notices.
+- Improved emergency warning detection with Bangla/English/Banglish phrases and negation/contrast handling.
+- Added medicine-safety prompts for NSAIDs/aspirin, paracetamol, antibiotics, steroids, anticoagulants, pediatric dose and pregnancy cues.
+- Doctor recommendations now require Admin verification, approved public profile and BMDC registration; removed fake seeded doctors.
+- Added Admin-assigned clinician review workflow in Doctor Dashboard; clinician approval does not auto-publish.
+- Added opt-in local-only chat history (off by default) and structured Not Helpful reason/comment.
+- Added Firestore Rules for medical_sources and chatbot_clinical_reviews; extended feedback field validation.
+- Validation: 42/42 Task 29–39 checks; 21/21 full test suites.
+
+
+Batch 8–10 — Tasks 73–92
+- Task 73: retained Admin BMDC doctor verification and revoke flow.
+- Task 74: Doctor weekly availability editor; schedule writes limited to the matching doctor UID.
+- Task 75: retained existing online appointment booking and ticket flow.
+- Task 76–77: Admin hospital directory and patient-side nearest listed hospital locator.
+- Task 78: access-controlled doctor/patient messaging; not end-to-end encrypted or an emergency channel.
+- Task 79–83: bounded patient/symptom-check/chatbot analytics, Top 100 questions and unanswered queue.
+- Task 84: retained existing Admin Question Bank/Knowledge Base editor.
+- Task 85: append-only doctor activity monitoring.
+- Task 86: Firebase Phone MFA enrollment and login challenge; requires Firebase Console setup, verified email and SMS configuration.
+- Task 87: optional client-side AES-GCM-256 encrypted health archive; existing Firestore records are not retroactively app-encrypted.
+- Task 88: retained append-only Admin audit log.
+- Task 89: daily Cloud Functions backup source added; not active until deployed to a billing-enabled Firebase project and verified in logs.
+- Task 90: PWA manifest, service worker, install icons and offline shell.
+- Task 91: user-triggered encrypted IndexedDB offline archive with a standalone offline unlock page.
+- Task 92: patient data export and re-authenticated account deletion for supported UID-linked records; accepted appointments and anonymous legacy data are limitations.
+- New Firestore collections: public_hospitals, doctor_activity_logs, doctor_patient_conversations/messages, patient_secure_vault.
+- Updated cumulative Firestore Rules are in firestore.rules and firestore_rules_current.txt. Back up current live rules before deploying.
+- New deployment and security instructions: docs/TASK73_92_DEPLOYMENT_AND_SECURITY.md.
+
+Batch 8–10 validation:
+- Task 73–92 integration checks: 25/25 passed.
+- Release audit: 43/43 passed.
+- Task 68–72 regression: 31/31 passed; Task 63–67: 23/23; Task 54–58: 25/25; Task 59–62: 28/28.
+- New/changed JavaScript module and inline-script syntax checks: 18/18 passed.
+- Firebase Emulator rules tests, SMS MFA, real hospital geolocation, messaging with two accounts, backup deployment/restore, PWA install and offline browser testing remain required before production.
+
+
+Chatbot UI refinement (post Task 1–92 package)
+- Moved chat history, voice settings, privacy notice, language hint and question suggestion into one compact, collapsed-by-default Chat Settings panel.
+- Kept the original controls and element IDs so existing JavaScript behavior remains connected.
+- Kept the message composer visible at the bottom and allowed the answer area to use the available height.
+- Starter questions now wrap without a horizontal scrollbar and disappear after the first user message; they return after clearing the visible chat.
+- Chat auto-scroll is scheduled after the browser renders the newly added answer and related safety/quality content.
+- Added responsive styles for narrow screens and moved empty voice-status text out of the layout.
+- Bumped the PWA shell cache to v3-chatbot-ui so the updated UI is fetched after deployment.
+- Firebase configuration and Firestore Rules were not changed in this UI refinement.
+- UI layout checks: 15/15; Task 73–92 regression: 25/25; release audit: 43/43; Task 40–53 regression: 54/54; Task 68–72 regression: 31/31. JavaScript syntax and HTML duplicate-ID checks passed.
+
+
+Chatbot UI refinement v2 (after user screenshot review)
+- Starter suggestions now use a responsive two-column grid (single column on very narrow screens), with horizontal overflow explicitly disabled.
+- Starter suggestions are hidden using both the HTML hidden state and an important inline display rule after the first user message; they reappear when the visible chat is cleared.
+- Removed the extra "History · Voice" hint from the Settings summary to prevent crowding; all history and voice controls remain inside the disclosure panel.
+- Suppressed the browser's native disclosure marker and retained a clear plus/minus affordance.
+- Chat auto-scroll now waits two animation frames so answer feedback, citations and suggested follow-ups are included in the final scroll height.
+- Bumped PWA shell cache to v4-chatbot-ui.
+- Firebase configuration and Firestore Rules remain unchanged.
+- Validation: chatbot UI 15/15; Task 73–92 25/25; release audit 43/43. JS syntax and HTML duplicate-ID checks passed.

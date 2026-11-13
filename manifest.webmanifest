@@ -1,0 +1,25 @@
+{
+  "id": "/index.html",
+  "name": "Smart Dengue Management System",
+  "short_name": "Smart Dengue",
+  "description": "Patient dashboard, dengue information and doctor appointment tools.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f7f5",
+  "theme_color": "#087f8c",
+  "icons": [
+    {
+      "src": "./assets/images/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/images/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

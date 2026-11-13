@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="../../manifest.webmanifest">
+    <meta name="theme-color" content="#087f8c">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Smart Dengue Management System</title>
@@ -307,12 +309,426 @@
 </div>
 
         
+<div class="section" id="chatbot-doctor-verification-section">
+    <h2>🩺 Chatbot Doctor Verification</h2>
+    <p>শুধু Admin কর্তৃক BMDC registration যাচাই করা চিকিৎসক Chatbot-এর recommendation-এ দেখানো হবে। যাচাই ছাড়া কাউকে verified হিসেবে চিহ্নিত করবেন না।</p>
+    <p id="chatbot-doctor-verification-message" aria-live="polite">Loading public doctor profiles...</p>
+    <div id="chatbot-doctor-verification-list" style="display:grid;gap:12px;"></div>
+</div>
+
+<div class="section" id="task73-85-admin-operations">
+    <h2>73–85 · Doctor, Hospital & Analytics Operations</h2>
+    <p>Existing BMDC verification, doctor schedule management, online booking, and Question Bank editor remain in place. These panels add directory administration, bounded analytics and doctor activity visibility.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+        <a href="#chatbot-doctor-verification-section">73 · Doctor Verification</a>
+        <a href="pages/doctor-schedule-management.html">74 · Schedule Management</a>
+        <a href="../../index.html#appointment-section">75 · Online Booking</a>
+        <a href="#admin-hospital-directory">76 · Hospital Directory</a>
+        <a href="#admin-patient-analytics">79–83 · Analytics</a>
+        <a href="#knowledge-management-section">84 · Knowledge Base Editor</a>
+        <a href="#admin-doctor-monitoring">85 · Doctor Activity</a>
+        <a href="#admin-activity-section">88 · Audit Log</a>
+    </div>
+</div>
+
+<div class="section" id="admin-hospital-directory">
+    <h2>76 · Public Hospital Directory Management</h2>
+    <p>Publish hospital details and map coordinates. Verify the information before making a listing active.</p>
+    <form id="admin-hospital-form" style="display:grid;gap:9px;max-width:700px;">
+        <label for="hospital-admin-name">Hospital name</label><input id="hospital-admin-name" required maxlength="160">
+        <label for="hospital-admin-address">Full address</label><input id="hospital-admin-address" required maxlength="300">
+        <label for="hospital-admin-city">City / District</label><input id="hospital-admin-city" maxlength="100">
+        <label for="hospital-admin-phone">Phone</label><input id="hospital-admin-phone" maxlength="40">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><label for="hospital-admin-lat">Latitude (optional)</label><input id="hospital-admin-lat" type="number" step="any" min="-90" max="90"></div>
+            <div><label for="hospital-admin-lng">Longitude (optional)</label><input id="hospital-admin-lng" type="number" step="any" min="-180" max="180"></div>
+        </div>
+        <label><input type="checkbox" id="hospital-admin-emergency"> Emergency services listed (verify by phone)</label>
+        <button type="submit" style="padding:10px 14px;background:#087f8c;color:white;border:0;border-radius:7px;">Publish hospital listing</button>
+    </form>
+    <p id="admin-hospital-status" aria-live="polite"></p>
+    <div id="admin-hospital-list" style="display:grid;gap:8px;"></div>
+</div>
+
+<div class="section" id="admin-patient-analytics">
+    <h2>79–83 · Patient, Dengue & Chatbot Analytics</h2>
+    <p>Counts are calculated from bounded samples. Symptom-check risk labels are self-reported screening outputs, not laboratory-confirmed dengue cases or diagnoses.</p>
+    <div class="stats">
+        <div class="card"><p>Patients in sample</p><h3 id="admin-patient-total">—</h3></div>
+        <div class="card"><p>Doctors in sample</p><h3 id="admin-doctor-total">—</h3></div>
+        <div class="card"><p>Appointments in sample</p><h3 id="admin-appointment-total">—</h3></div>
+        <div class="card"><p>Symptom checks (not confirmed cases)</p><h3 id="admin-symptom-check-total">—</h3></div>
+        <div class="card"><p>Chatbot queries in sample</p><h3 id="admin-chatbot-query-total">—</h3></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+        <button type="button" id="admin-intelligence-refresh">Refresh analytics</button>
+        <button type="button" id="admin-analytics-export">Export analytics CSV</button>
+    </div>
+    <p id="admin-intelligence-status" aria-live="polite">Analytics loading…</p>
+    <h3>80 · Symptom-check risk distribution</h3>
+    <div id="admin-dengue-risk-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;"></div>
+    <h3 style="margin-top:20px;">82 · Most asked questions (Top 100)</h3>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Rank</th><th>Count</th><th>Question</th></tr></thead><tbody id="admin-top100-questions"></tbody></table></div>
+    <h3 style="margin-top:20px;">83 · Unanswered / low-match questions</h3>
+    <div id="admin-unanswered-questions" style="display:grid;gap:8px;"></div>
+</div>
+
+<div class="section" id="admin-doctor-monitoring">
+    <h2>85 · Doctor Activity Monitoring</h2>
+    <p>Shows the latest doctor dashboard and availability events recorded by the application. It does not measure clinical quality or patient outcomes.</p>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th>Date</th><th>Doctor UID</th><th>Action</th><th>Summary</th></tr></thead><tbody id="admin-doctor-activity"></tbody></table></div>
+</div>
+
+<div class="section" id="admin-backup-setup">
+    <h2>89 · Scheduled Database Backup</h2>
+    <p>The daily Cloud Function source is included in this release, but scheduled backups are NOT active until you configure the private Cloud Storage bucket, enable the required Firebase billing plan, and deploy the function. Do not treat this page as proof that a backup has run.</p>
+    <p id="scheduled-backup-status">Deployment required — see docs/TASK73_92_DEPLOYMENT_AND_SECURITY.md.</p>
+</div>
+
 <div class="section" id="appointment-notifications-section">
     <h2>🔔 Appointment Notifications <span id="appointment-notification-count" style="display:inline-block;min-width:28px;padding:3px 8px;border-radius:999px;background:#dc2626;color:#fff;font-size:14px;text-align:center;">0</span></h2>
     <p>নতুন বুকিং হলে এখানে রিয়েল-টাইমে notification দেখাবে।</p>
     <div id="appointment-notifications" aria-live="polite" style="display:grid;gap:10px;margin-top:14px;">
         <p>Notifications loading...</p>
     </div>
+</div>
+
+<div class="section" id="chatbot-analytics-section">
+    <h2>📊 Chatbot Performance Analytics</h2>
+    <p>সর্বশেষ ৩০ দিনের প্রশ্ন, উত্তর-মিল, ব্যবহারকারীর রেটিং এবং সবচেয়ে বেশি করা প্রশ্নের সারাংশ।</p>
+    <div class="stats" style="margin-top:16px;">
+        <div class="card"><p>Questions · 30 days</p><h3 id="analytics-questions-30d">—</h3></div>
+        <div class="card"><p>Questions · 7 days</p><h3 id="analytics-questions-7d">—</h3></div>
+        <div class="card"><p>Average text match</p><h3 id="analytics-average-match">—</h3></div>
+        <div class="card"><p>Helpful rate</p><h3 id="analytics-helpful-rate">—</h3></div>
+        <div class="card"><p>Unanswered / low match</p><h3 id="analytics-unanswered-total">—</h3></div>
+        <div class="card"><p>Poor matches · under 55%</p><h3 id="analytics-poor-match-total">—</h3></div>
+        <div class="card"><p>User ratings · 30 days</p><h3 id="analytics-ratings-total">—</h3></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+        <button type="button" id="analytics-refresh" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">Refresh Analytics</button>
+        <button type="button" id="analytics-export" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">Export Analytics CSV</button>
+    </div>
+    <p id="chatbot-analytics-message" aria-live="polite">Analytics loading...</p>
+    <h3 style="margin-top:22px;">Daily question volume · Last 7 days</h3>
+    <div id="analytics-daily-chart" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;min-height:170px;padding:12px;border:1px solid #e2e8f0;border-radius:10px;"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:22px;">
+        <div>
+            <h3>Most asked questions · Top 50</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#087f8c;color:#fff;"><th style="padding:9px;">Count</th><th style="padding:9px;">Question</th></tr></thead>
+                    <tbody id="analytics-top-questions"></tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h3>Topic performance</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#475569;color:#fff;"><th style="padding:9px;">Topic</th><th style="padding:9px;">Questions</th><th style="padding:9px;">Avg match</th><th style="padding:9px;">Low match</th><th style="padding:9px;">Helpful</th></tr></thead>
+                    <tbody id="analytics-topic-performance"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:22px;">
+        <div>
+            <h3>Unanswered questions · Top 30</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#9a3412;color:#fff;"><th style="padding:9px;">Count</th><th style="padding:9px;">Question</th></tr></thead>
+                    <tbody id="analytics-unanswered-list"></tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h3>Poor match questions · Top 30</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#b45309;color:#fff;"><th style="padding:9px;">Avg match</th><th style="padding:9px;">Count</th><th style="padding:9px;">Question</th></tr></thead>
+                    <tbody id="analytics-poor-match-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <h3 style="margin-top:22px;">User satisfaction · Feedback reasons</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;"><th style="padding:9px;">Reason</th><th style="padding:9px;">Count</th></tr></thead>
+            <tbody id="analytics-feedback-reasons"></tbody>
+        </table>
+    </div>
+    <h3 style="margin-top:22px;">Most Not Helpful questions</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;"><th style="padding:9px;">Reports</th><th style="padding:9px;">Matched question</th></tr></thead>
+            <tbody id="analytics-not-helpful-questions"></tbody>
+        </table>
+    </div>
+    <p class="notice">Privacy: question text is stored in Firestore for analytics and popularity reports. Only Admins can read analytics events. Avoid entering names, phone numbers or other personal information into the chatbot.</p>
+</div>
+
+<div class="section" id="chatbot-feedback-section">
+    <h2>🤖 Chatbot Answer Feedback</h2>
+    <p>ব্যবহারকারীদের Helpful / Not helpful রেটিং, প্রশ্নের মিল এবং উত্তর উন্নয়নের জন্য সাম্প্রতিক মতামত।</p>
+    <div class="stats" style="margin-top:16px;">
+        <div class="card"><p>Loaded feedback</p><h3 id="chatbot-feedback-total">—</h3></div>
+        <div class="card"><p>Helpful</p><h3 id="chatbot-feedback-helpful">—</h3></div>
+        <div class="card"><p>Not helpful</p><h3 id="chatbot-feedback-unhelpful">—</h3></div>
+        <div class="card"><p>Average match score</p><h3 id="chatbot-feedback-score">—</h3></div>
+    </div>
+    <p id="chatbot-feedback-message" aria-live="polite">Feedback loading...</p>
+    <div style="overflow-x:auto;margin-top:14px;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead>
+                <tr style="background:#087f8c;color:white;">
+                    <th style="padding:10px;">Date</th>
+                    <th style="padding:10px;">Rating</th>
+                    <th style="padding:10px;">Topic</th>
+                    <th style="padding:10px;">Match</th>
+                    <th style="padding:10px;">Question</th>
+                    <th style="padding:10px;">Answer preview</th>
+                    <th style="padding:10px;">Reason</th>
+                    <th style="padding:10px;">Comment</th>
+                </tr>
+            </thead>
+            <tbody id="chatbot-feedback-list"></tbody>
+        </table>
+    </div>
+    <p class="notice">Privacy note: feedback is submitted only after a user clicks a rating button. It may contain health-related text. Restrict admin access and apply the Firestore rules supplied with this update.</p>
+</div>
+
+<div class="section" id="knowledge-management-section">
+    <h2>📚 Smart Question Bank & Knowledge Management</h2>
+    <p>Built-in, approved community এবং Admin-created প্রশ্ন এক জায়গা থেকে পরিচালনা করুন। Built-in source file সরাসরি বদলানো হয় না; Admin changes Firestore-এ overlay হিসেবে সংরক্ষিত থাকে।</p>
+    <div class="stats" style="margin-top:16px;">
+        <div class="card"><p>Visible questions</p><h3 id="kb-total-count">—</h3></div>
+        <div class="card"><p>Built-in questions</p><h3 id="kb-builtin-count">—</h3></div>
+        <div class="card"><p>Community questions</p><h3 id="kb-community-count">—</h3></div>
+        <div class="card"><p>Admin-created questions</p><h3 id="kb-custom-count">—</h3></div>
+    </div>
+
+    <div id="kb-bulk-import" style="border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin:18px 0;">
+        <h3>📥 Bulk Import Questions (CSV / Excel)</h3>
+        <p>CSV, XLSX বা XLS ফাইল থেকে সর্বোচ্চ ৫০০টি প্রশ্ন Preview করে Admin approval-এর পর Publish করুন।</p>
+        <p style="font-size:13px;color:#475569;">Required columns: <code>topic</code>, <code>question</code>, <code>answerBn</code>, <code>answerEn</code>. Alternative headings: Topic, Question, Answer Bangla, Answer English.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input id="kb-import-file" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+            <button type="button" id="kb-import-template" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Download Template</button>
+            <button type="button" id="kb-import-preview" style="padding:9px 12px;background:#087f8c;color:white;border:0;border-radius:7px;">Validate & Preview</button>
+        </div>
+        <p id="kb-import-status" aria-live="polite"></p>
+        <div id="kb-import-preview-area" hidden style="margin-top:14px;">
+            <div class="stats">
+                <div class="card"><p>Total rows</p><h3 id="kb-import-total">0</h3></div>
+                <div class="card"><p>Valid rows</p><h3 id="kb-import-valid">0</h3></div>
+                <div class="card"><p>Duplicates</p><h3 id="kb-import-duplicates">0</h3></div>
+                <div class="card"><p>Errors</p><h3 id="kb-import-errors">0</h3></div>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+                <input id="kb-import-allow-similar" type="checkbox">
+                Allow rows with similar-question warnings (exact duplicates remain blocked)
+            </label>
+            <div style="overflow-x:auto;max-height:420px;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#475569;color:white;"><th style="padding:8px;">Row</th><th style="padding:8px;">Topic</th><th style="padding:8px;">Question</th><th style="padding:8px;">Validation</th><th style="padding:8px;">Details</th></tr></thead>
+                    <tbody id="kb-import-preview-rows"></tbody>
+                </table>
+            </div>
+            <button type="button" id="kb-import-publish" disabled style="margin-top:12px;padding:10px 15px;background:#15803d;color:white;border:0;border-radius:7px;">Approve & Publish Valid Questions</button>
+            <button type="button" id="kb-import-clear" style="margin-top:12px;padding:10px 15px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Clear Preview</button>
+            <button type="button" id="kb-import-failed-download" style="margin-top:12px;padding:10px 15px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Download Failed / Review Rows CSV</button>
+        </div>
+        <div style="margin-top:18px;">
+            <h4>Import History</h4>
+            <div id="kb-import-history">No imports loaded.</div>
+        </div>
+        <div style="margin-top:18px;">
+            <h4>Automatic Daily Backups</h4>
+            <p>একদিনে Admin Dashboard প্রথমবার খুললে Question Bank-এর snapshot তৈরি হবে।</p>
+            <button type="button" id="kb-backup-now">Create Backup Now</button>
+            <div id="kb-backup-history">Checking automatic backups...</div>
+        </div>
+        <div style="margin-top:18px;">
+            <h4>Unanswered / Low-Match Questions</h4>
+            <p>যেসব প্রশ্নের জন্য Chatbot নির্ভরযোগ্য মিল পায়নি, সেগুলো এখানে review করতে পারবে।</p>
+            <button type="button" id="kb-missed-refresh">Refresh Missed Questions</button>
+            <div id="kb-missed-questions">Loading missed questions...</div>
+        </div>
+        <div style="margin-top:18px;">
+            <h4>Medical Answer Safety Audit</h4>
+            <p>Rule-based screening flags risky content for human review. A passing result is not clinical verification.</p>
+            <button type="button" id="kb-medical-audit-refresh">Run Medical Safety Audit</button>
+            <div id="kb-medical-audit-results" aria-live="polite">Run the audit to inspect current answers.</div>
+        </div>
+        <div id="kb-version-history" hidden style="margin-top:18px;border:1px solid #cbd5e1;border-radius:10px;padding:12px;">
+            <h4>Question Version History</h4>
+            <p id="kb-version-title"></p>
+            <div id="kb-version-list"></div>
+            <button type="button" id="kb-version-close">Close History</button>
+        </div>
+        <p class="notice">Only valid and approved rows are published. Exact duplicates are skipped. Similar wording is flagged for review. Medical answers should be reviewed by a qualified clinician before publication.</p>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;">
+        <button type="button" id="kb-add-new" style="padding:10px 14px;background:#087f8c;color:white;border:0;border-radius:7px;">+ Add New Question</button>
+        <button type="button" id="kb-export-json" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Export JSON</button>
+        <button type="button" id="kb-export-csv" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Export CSV</button>
+        <button type="button" id="kb-backup-json" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Download Backup</button>
+        <button type="button" id="kb-export-complete" style="padding:10px 14px;border:1px solid #087f8c;border-radius:7px;background:#ecfeff;color:#075e56;">Export Complete Knowledge Bundle</button>
+    </div>
+
+    <form id="kb-editor-form" hidden style="border:1px solid #cbd5e1;border-radius:12px;padding:16px;margin-bottom:18px;gap:10px;">
+        <h3 id="kb-editor-title">Add Question</h3>
+        <input type="hidden" id="kb-entry-id">
+        <input type="hidden" id="kb-entry-source">
+        <label>Topic (existing or new)
+            <input id="kb-topic" required maxlength="60" placeholder="e.g. symptoms, prevention, new_topic" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+        </label>
+        <label>Question (Bangla or English)
+            <textarea id="kb-question" required maxlength="500" rows="2" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;"></textarea>
+        </label>
+        <label>Answer — Bangla
+            <textarea id="kb-answer-bn" required maxlength="6000" rows="5" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;"></textarea>
+        </label>
+        <label>Answer — English
+            <textarea id="kb-answer-en" required maxlength="6000" rows="5" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;"></textarea>
+        </label>
+        <label>Medical source IDs (optional, comma separated)
+            <input id="kb-source-ids" maxlength="300" placeholder="e.g. dghs_dengue_2025, cdc_clinical_care" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+        </label>
+        <label>Publishing status
+            <select id="kb-publish-status" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+                <option value="pending">Pending review (not live yet)</option>
+                <option value="active">Approve & publish now</option>
+            </select>
+        </label>
+        <p style="font-size:12px;color:#92400e;">Medical content must be checked before saving. This changes the live chatbot knowledge base after refresh.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="submit" id="kb-save" style="padding:10px 14px;background:#087f8c;color:white;border:0;border-radius:7px;">Save Question</button>
+            <button type="button" id="kb-cancel" style="padding:10px 14px;border:1px solid #cbd5e1;border-radius:7px;background:white;">Cancel</button>
+        </div>
+        <p id="kb-editor-status" aria-live="polite"></p>
+    </form>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;">
+        <input id="kb-search" type="search" placeholder="Search question, answer or topic..." style="flex:1;min-width:220px;padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+        <select id="kb-topic-filter" style="padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+            <option value="">All topics</option>
+        </select>
+        <select id="kb-status-filter" style="padding:10px;border:1px solid #cbd5e1;border-radius:7px;">
+            <option value="active">Active questions</option>
+            <option value="pending">Pending approval</option>
+            <option value="deleted">Deleted / archived</option>
+            <option value="all">All statuses</option>
+        </select>
+    </div>
+    <p id="kb-list-message" aria-live="polite">Loading Question Bank...</p>
+    <div id="kb-bulk-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;background:#f1f5f9;border-radius:8px;margin:10px 0;">
+        <strong id="kb-selected-count">0 selected</strong>
+        <input id="kb-bulk-topic" maxlength="60" placeholder="New topic slug (optional)" style="padding:8px;border:1px solid #cbd5e1;border-radius:6px;">
+        <button type="button" id="kb-bulk-apply-topic">Apply Topic</button>
+        <button type="button" id="kb-bulk-approve">Approve Selected</button>
+        <button type="button" id="kb-bulk-delete">Delete Selected</button>
+        <button type="button" id="kb-bulk-restore">Restore Selected</button>
+        <button type="button" id="kb-bulk-clear">Clear Selection</button>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#087f8c;color:white;">
+                <th style="padding:9px;"><input type="checkbox" id="kb-select-page" aria-label="Select current page"></th>
+                <th style="padding:9px;">Topic</th><th style="padding:9px;">Question</th>
+                <th style="padding:9px;">Source</th><th style="padding:9px;">Status</th>
+                <th style="padding:9px;">Actions</th>
+            </tr></thead>
+            <tbody id="kb-question-list"></tbody>
+        </table>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;">
+        <button type="button" id="kb-prev-page">Previous</button>
+        <span id="kb-page-label">Page 1</span>
+        <button type="button" id="kb-next-page">Next</button>
+    </div>
+    <p class="notice">Built-in questions are edited through a Firestore overlay; original JavaScript question-bank source remains unchanged. Delete is a reversible soft-delete. Export/Backup includes the current bank plus Admin changes.</p>
+</div>
+
+<div class="section" id="medical-source-management-section">
+    <h2>📚 Medical Source Registry</h2>
+    <p>Official medical references used for further reading. Adding a source does not make an answer clinically verified. Use HTTPS links from recognized health authorities.</p>
+    <form id="medical-source-form" style="display:grid;gap:8px;max-width:760px;">
+        <label>Source title <input id="medical-source-title" required maxlength="180" style="width:100%;padding:9px;"></label>
+        <label>Organization <input id="medical-source-org" required maxlength="120" style="width:100%;padding:9px;"></label>
+        <label>HTTPS URL <input id="medical-source-url" type="url" required maxlength="500" placeholder="https://..." style="width:100%;padding:9px;"></label>
+        <label>Topics (comma separated) <input id="medical-source-topics" required maxlength="240" placeholder="general, symptoms, warning, medicine" style="width:100%;padding:9px;"></label>
+        <label>Review due date (optional) <input id="medical-source-due" type="date" style="width:100%;padding:9px;"></label>
+        <button type="submit" id="medical-source-save" style="padding:10px 14px;background:#087f8c;color:white;border:0;border-radius:7px;">Add Reference</button>
+    </form>
+    <p id="medical-source-message" aria-live="polite"></p>
+    <div id="medical-source-list" style="display:grid;gap:10px;margin-top:14px;">Loading references...</div>
+</div>
+
+<div class="section" id="clinical-review-management-section">
+    <h2>🧑‍⚕️ Clinician Review Workflow</h2>
+    <p>Enable an existing doctor account as a clinical reviewer, then send selected Question Bank answers to that reviewer. Clinical approval is separate from Admin publishing.</p>
+    <form id="clinical-reviewer-access-form" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="clinical-reviewer-uid" required maxlength="128" placeholder="Doctor Firebase UID" style="flex:1;min-width:220px;padding:10px;">
+        <button type="submit" style="padding:10px 14px;background:#087f8c;color:white;border:0;border-radius:7px;">Enable Reviewer</button>
+        <button type="button" id="clinical-reviewer-disable" style="padding:10px 14px;background:#9f2424;color:white;border:0;border-radius:7px;">Disable Reviewer</button>
+    </form>
+    <p id="clinical-reviewer-access-message" aria-live="polite"></p>
+    <p>To send an answer for review, open Question Bank and click <strong>Clinical Review</strong> on the relevant row. Enter the enabled reviewer's UID above before sending.</p>
+    <h3>Clinical Review Queue</h3>
+    <button type="button" id="clinical-review-refresh">Refresh Queue</button>
+    <p id="clinical-review-queue-message" aria-live="polite">Loading clinical review queue...</p>
+    <div id="clinical-review-queue-list" style="display:grid;gap:10px;"></div>
+    <p class="notice">Clinician approval does not automatically publish an answer. Admin must review the workflow and publish any corrected content separately. Review decisions must be based on current clinical sources.</p>
+</div>
+
+<div class="section" id="answer-improvement-section">
+    <h2>🛠️ Smart Answer Improvement Review</h2>
+    <p>Not Helpful feedback থেকে তৈরি সমস্যাযুক্ত উত্তরগুলো যাচাই করুন। সংশোধন প্রকাশের আগে Admin approval বাধ্যতামূলক।</p>
+    <div class="stats" style="margin-top:16px;">
+        <div class="card"><p>Pending answer issues</p><h3 id="answer-issues-pending">—</h3></div>
+        <div class="card"><p>Published corrections</p><h3 id="answer-corrections-total">—</h3></div>
+        <div class="card"><p>Rejected issues</p><h3 id="answer-issues-rejected">—</h3></div>
+    </div>
+    <p id="answer-issues-message" aria-live="polite">Loading answer issues...</p>
+    <div id="answer-issues-list" style="display:grid;gap:14px;margin-top:14px;"></div>
+    <h3 style="margin-top:24px;">Correction History</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#087f8c;color:#fff;">
+                <th style="padding:10px;">Date</th><th style="padding:10px;">Version</th>
+                <th style="padding:10px;">Source question</th><th style="padding:10px;">Admin</th>
+            </tr></thead>
+            <tbody id="answer-correction-history"></tbody>
+        </table>
+    </div>
+    <h3 style="margin-top:24px;">Most Reported Questions</h3>
+    <p>Repeated Not Helpful reports grouped by matched question.</p>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;">
+                <th style="padding:10px;">Reports</th><th style="padding:10px;">Matched question</th><th style="padding:10px;">Latest status</th>
+            </tr></thead>
+            <tbody id="answer-issue-report-list"></tbody>
+        </table>
+    </div>
+    <p class="notice">Medical safety: Admin must verify corrected answers against reliable clinical guidance. Uncertain medical corrections should be reviewed by a qualified clinician. Publishing a correction changes the live chatbot answer for the matched source question.</p>
+</div>
+
+<div class="section" id="question-suggestions-section">
+    <h2>📚 Community Question Bank Review</h2>
+    <p>ব্যবহারকারীদের প্রস্তাবিত প্রশ্ন যাচাই করুন। উত্তর লিখে অনুমোদন করলে সেটি Community Question Bank-এ যুক্ত হবে।</p>
+    <div class="stats" style="margin-top:16px;">
+        <div class="card"><p>Pending suggestions</p><h3 id="question-suggestions-total">—</h3></div>
+        <div class="card"><p>Approved by this review</p><h3 id="question-suggestions-approved">0</h3></div>
+        <div class="card"><p>Rejected by this review</p><h3 id="question-suggestions-rejected">0</h3></div>
+    </div>
+    <p id="question-suggestions-message" aria-live="polite">Loading suggestions...</p>
+    <div id="question-suggestions-list" style="display:grid;gap:14px;margin-top:14px;"></div>
+    <p class="notice">Medical safety: Admin approval must include a medically reviewed Bangla and English answer. Do not approve a suggestion merely because it has a high similarity score. Refer uncertain clinical content to a qualified clinician.</p>
 </div>
 
 <div class="section">
@@ -339,8 +755,41 @@
     </div>
 </div>
 
+<div id="admin-activity-section" class="section" id="admin-activity-log-section">
+    <h2>🧾 Admin Activity Log</h2>
+    <p>Question Bank, imports, clinical reviewer access, medical sources and system administration actions. Only Admins can view this audit trail.</p>
+    <button type="button" id="admin-activity-refresh" style="padding:9px 12px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">Refresh Activity Log</button>
+    <p id="admin-activity-message" role="status" aria-live="polite">Loading activity...</p>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;">
+                <th style="padding:9px;">Time</th><th style="padding:9px;">Admin</th>
+                <th style="padding:9px;">Action</th><th style="padding:9px;">Target</th><th style="padding:9px;">Details</th>
+            </tr></thead>
+            <tbody id="admin-activity-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section" id="system-health-section">
+    <h2>🩺 System Health Monitor</h2>
+    <p>Read-only checks for Admin access, Firestore connectivity and core chatbot modules. This is a quick availability check, not a full penetration test or clinical validation.</p>
+    <button type="button" id="system-health-run" style="padding:9px 12px;border:0;border-radius:7px;background:#087f8c;color:white;">Run System Health Check</button>
+    <p id="system-health-message" role="status" aria-live="polite">Health check has not run yet.</p>
+    <div id="system-health-results" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px;"></div>
+</div>
+
     </main>
 
+    <script src="../js/dengue-questions.js"></script>
+    <script src="../js/dengue-search.js"></script>
+    <script src="../js/community-question-bank.js"></script>
+    <script src="../js/answer-overrides.js"></script>
+    <script src="../js/chatbot-intelligence.js"></script>
+    <script src="../js/medical-safety.js"></script>
+    <script src="../js/medical-references.js"></script>
+    <script src="../js/chatbot-quality.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import {
@@ -362,7 +811,11 @@ import {
      serverTimestamp,
      query,
      where,
-     onSnapshot
+     onSnapshot,
+     orderBy,
+     limit,
+     runTransaction,
+     writeBatch
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -379,6 +832,127 @@ import {
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Task 50: append-only Admin audit log. A failed log write never blocks the main action.
+        async function logAdminActivity(action, targetType, targetId, summary) {
+            try {
+                if (!auth.currentUser) return;
+                await addDoc(collection(db, "admin_activity_logs"), {
+                    actorUid: String(auth.currentUser.uid).slice(0, 128),
+                    actorEmail: String(auth.currentUser.email || "").slice(0, 200),
+                    action: String(action || "admin_action").slice(0, 80),
+                    targetType: String(targetType || "system").slice(0, 60),
+                    targetId: String(targetId || "").slice(0, 180),
+                    summary: String(summary || "").slice(0, 500),
+                    createdAt: serverTimestamp(),
+                    createdAtClient: new Date().toISOString()
+                });
+            } catch (error) {
+                console.warn("Admin activity log write failed:", error);
+            }
+        }
+
+        async function loadAdminActivityLog() {
+            const message = document.getElementById("admin-activity-message");
+            const body = document.getElementById("admin-activity-list");
+            if (!message || !body) return;
+            message.textContent = "Loading the latest 100 Admin actions...";
+            try {
+                const snapshot = await getDocs(query(
+                    collection(db, "admin_activity_logs"),
+                    orderBy("createdAt", "desc"),
+                    limit(100)
+                ));
+                body.replaceChildren();
+                snapshot.docs.forEach(item => {
+                    const record = item.data();
+                    const row = document.createElement("tr");
+                    const date = record.createdAt && record.createdAt.toDate
+                        ? record.createdAt.toDate()
+                        : (record.createdAtClient ? new Date(record.createdAtClient) : null);
+                    const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : "—";
+                    [dateText, record.actorEmail || record.actorUid || "Admin",
+                        record.action || "—",
+                        `${record.targetType || "system"}${record.targetId ? " · " + record.targetId : ""}`,
+                        record.summary || "—"
+                    ].forEach(value => {
+                        const cell = document.createElement("td");
+                        cell.textContent = String(value);
+                        cell.style.cssText = "padding:9px;border-bottom:1px solid #e2e8f0;vertical-align:top;overflow-wrap:anywhere;";
+                        row.appendChild(cell);
+                    });
+                    body.appendChild(row);
+                });
+                if (!snapshot.size) {
+                    const row = document.createElement("tr");
+                    const cell = document.createElement("td");
+                    cell.colSpan = 5; cell.textContent = "No Admin activity has been recorded yet.";
+                    cell.style.padding = "10px"; row.appendChild(cell); body.appendChild(row);
+                }
+                message.textContent = `Loaded ${snapshot.size} recent Admin action(s). Older entries remain in Firestore.`;
+            } catch (error) {
+                console.error("Admin activity log load failed:", error);
+                message.textContent = "Activity log unavailable. Check that the new Firestore Rules are deployed.";
+            }
+        }
+
+        // Task 52: bounded read-only health checks; no health data is written to Firestore.
+        async function runAdminSystemHealthCheck() {
+            const message = document.getElementById("system-health-message");
+            const resultsBox = document.getElementById("system-health-results");
+            if (!message || !resultsBox) return;
+            message.textContent = "Running read-only checks...";
+            resultsBox.replaceChildren();
+            const checks = [];
+            const addCheck = (name, status, detail) => checks.push({ name, status, detail });
+            addCheck("Network", navigator.onLine ? "pass" : "warn", navigator.onLine ? "Browser reports online." : "Browser is offline.");
+            addCheck("Secure context", window.isSecureContext ? "pass" : "warn", window.isSecureContext ? "HTTPS/secure context detected." : "Microphone permissions and some browser APIs may be unavailable.");
+            addCheck("Authentication", auth.currentUser ? "pass" : "fail", auth.currentUser ? "Signed in." : "No active Firebase session.");
+            const moduleChecks = [
+                ["Question Bank", typeof window.getTopDengueMatches === "function"],
+                ["Answer confidence", typeof window.getChatbotAnswerQuality === "function"],
+                ["Emergency safety", typeof window.detectDengueEmergencySignals === "function"],
+                ["Medical references", typeof window.getMedicalSourceRegistry === "function"]
+            ];
+            moduleChecks.forEach(([name, ok]) => addCheck(name, ok ? "pass" : "fail", ok ? "Module function is loaded." : "Expected module function is missing."));
+            const collections = [
+                "chatbot_query_events", "chatbot_feedback", "chatbot_admin_question_bank",
+                "medical_sources", "chatbot_clinical_reviews", "public_doctors",
+                "chatbot_question_versions", "admin_activity_logs"
+            ];
+            const reads = await Promise.allSettled(collections.map(async name => {
+                const started = performance.now();
+                await getDocs(query(collection(db, name), limit(1)));
+                return { name, ms: Math.round(performance.now() - started) };
+            }));
+            reads.forEach((result, index) => {
+                if (result.status === "fulfilled") {
+                    addCheck(`Firestore · ${result.value.name}`, "pass", `Read permission OK · ${result.value.ms} ms`);
+                } else {
+                    addCheck(`Firestore · ${collections[index]}`, "fail", result.reason?.code || "Read failed; verify Rules and network.");
+                }
+            });
+            const failed = checks.filter(item => item.status === "fail").length;
+            const warnings = checks.filter(item => item.status === "warn").length;
+            checks.forEach(item => {
+                const card = document.createElement("div");
+                card.style.cssText = "padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;";
+                const heading = document.createElement("strong");
+                heading.textContent = `${item.status === "pass" ? "✓" : item.status === "warn" ? "!" : "✕"} ${item.name}`;
+                heading.style.color = item.status === "pass" ? "#166534" : item.status === "warn" ? "#92400e" : "#b91c1c";
+                const detail = document.createElement("p");
+                detail.textContent = item.detail;
+                detail.style.cssText = "margin-top:5px;font-size:12px;overflow-wrap:anywhere;";
+                card.append(heading, detail); resultsBox.appendChild(card);
+            });
+            message.textContent = `${checks.length} checks completed · ${checks.length - failed - warnings} passed · ${warnings} warning(s) · ${failed} failed. This is not a security penetration test.`;
+            await logAdminActivity("system_health_check", "system", "task52", message.textContent);
+            await loadAdminActivityLog();
+        }
+
+        function setupAdminAuditAndHealth() {
+            document.getElementById("admin-activity-refresh")?.addEventListener("click", loadAdminActivityLog);
+            document.getElementById("system-health-run")?.addEventListener("click", runAdminSystemHealthCheck);
+        }
 
         async function loadDashboardStats() {
             try {
@@ -407,6 +981,2304 @@ import {
                 console.error("Dashboard stats error:", error);
             }
         }
+
+function normalizeSuggestedQuestion(value) {
+    return String(value || "").toLocaleLowerCase().normalize("NFKC")
+        .replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString())
+        .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
+        .replace(/\s+/g, " ").trim();
+}
+
+let kbEntries = [];
+let kbAdminRecords = [];
+let kbCurrentPage = 0;
+const KB_PAGE_SIZE = 30;
+const kbSelectedEntries = new Set();
+
+function kbDocumentId(item) {
+    if (item.source === "builtin") return `static_${item.entryId}`;
+    if (item.source === "community") return `community_${item.entryId.replace(/^community_/, "")}`;
+    return item.entryId;
+}
+
+async function kbSaveVersionSnapshot(item, action, after = null) {
+    if (!item || !item.entryId) return;
+    const versionRef = doc(collection(db, "chatbot_question_versions"));
+    await setDoc(versionRef, {
+        entryId: String(item.entryId),
+        source: String(item.source || "custom"),
+        action: String(action || "update"),
+        before: {
+            topic: String(item.topic || ""),
+            question: String(item.question || ""),
+            answerBn: String(item.answerBn || ""),
+            answerEn: String(item.answerEn || ""),
+            sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+            status: String(item.status || "active")
+        },
+        after: after ? {
+            topic: String(after.topic || ""),
+            question: String(after.question || ""),
+            answerBn: String(after.answerBn || ""),
+            answerEn: String(after.answerEn || ""),
+            sourceIds: Array.isArray(after.sourceIds) ? after.sourceIds : [],
+            status: String(after.status || "active")
+        } : null,
+        changedBy: auth.currentUser ? auth.currentUser.uid : null,
+        changedAt: serverTimestamp(),
+        changedAtClient: new Date().toISOString()
+    });
+}
+
+function kbNormalize(value) {
+    return String(value || "").toLocaleLowerCase().normalize("NFKC")
+        .replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString())
+        .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
+        .replace(/\s+/g, " ").trim();
+}
+
+function kbDownload(filename, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function kbExportRecords() {
+    return kbEntries.map(item => ({
+        entryId: item.entryId,
+        source: item.source,
+        topic: item.topic,
+        question: item.question,
+        answerBn: item.answerBn,
+        answerEn: item.answerEn,
+        sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+        status: item.status
+    }));
+}
+
+// Task 51: export the complete Admin knowledge bundle, not only visible active rows.
+async function kbExportCompleteBundle() {
+    const button = document.getElementById("kb-export-complete");
+    if (button) button.disabled = true;
+    try {
+        const [sourcesSnapshot, batchesSnapshot, versionsSnapshot, reviewsSnapshot] = await Promise.all([
+            getDocs(collection(db, "medical_sources")),
+            getDocs(collection(db, "chatbot_import_batches")),
+            getDocs(collection(db, "chatbot_question_versions")),
+            getDocs(collection(db, "chatbot_clinical_reviews"))
+        ]);
+        const toPlain = value => {
+            if (value && typeof value.toDate === "function") return value.toDate().toISOString();
+            if (Array.isArray(value)) return value.map(toPlain);
+            if (value && typeof value === "object") {
+                return Object.fromEntries(Object.entries(value).map(([key, current]) => [key, toPlain(current)]));
+            }
+            return value;
+        };
+        const sources = typeof window.getMedicalSourceRegistry === "function"
+            ? window.getMedicalSourceRegistry().map(item => ({ id: item.id, ...toPlain(item) }))
+            : sourcesSnapshot.docs.map(item => ({ id: item.id, ...toPlain(item.data()) }));
+        const batches = batchesSnapshot.docs.map(item => ({ id: item.id, ...toPlain(item.data()) }));
+        const versions = versionsSnapshot.docs.map(item => ({ id: item.id, ...toPlain(item.data()) }));
+        // Export review status/fingerprint/source linkage only; reviewer notes and user data are excluded.
+        const clinicalReviewMetadata = reviewsSnapshot.docs.map(item => {
+            const data = item.data();
+            return {
+                id: item.id,
+                sourceEntryId: data.sourceEntryId || "",
+                status: data.status || "",
+                answerFingerprint: data.answerFingerprint || "",
+                sourceIds: Array.isArray(data.sourceIds) ? data.sourceIds : [],
+                reviewedSourceIds: Array.isArray(data.reviewedSourceIds) ? data.reviewedSourceIds : [],
+                reviewDueAt: data.reviewDueAt && typeof data.reviewDueAt.toDate === "function"
+                    ? data.reviewDueAt.toDate().toISOString() : data.reviewDueAt || null
+            };
+        });
+        const bundle = {
+            schemaVersion: 1,
+            project: "Smart Dengue Management System",
+            taskCoverage: "1-53",
+            exportedAt: new Date().toISOString(),
+            contents: ["questionBank", "medicalSources", "importBatches", "questionVersions", "clinicalReviewMetadata"],
+            privacy: "No user chat history, user profiles, appointments, contact messages, or clinician free-text notes are included.",
+            questionBank: kbExportRecords(),
+            medicalSources: sources,
+            importBatches: batches,
+            questionVersions: versions,
+            clinicalReviewMetadata
+        };
+        const filename = `smart-dengue-complete-knowledge-${new Date().toISOString().slice(0, 10)}.json`;
+        kbDownload(filename, JSON.stringify(bundle, null, 2), "application/json;charset=utf-8");
+        await logAdminActivity("knowledge_bundle_exported", "knowledge_base", "complete", `${bundle.questionBank.length} questions, ${sources.length} sources, ${versions.length} versions exported.`);
+        const status = document.getElementById("kb-editor-status");
+        if (status) status.textContent = `Complete knowledge bundle exported: ${bundle.questionBank.length} questions and ${sources.length} sources.`;
+    } catch (error) {
+        console.error("Complete knowledge export failed:", error);
+        alert("Could not export the complete knowledge bundle. Check Firestore Rules and try again.");
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
+function kbRenderTopicFilter() {
+    const select = document.getElementById("kb-topic-filter");
+    const selected = select.value;
+    const topics = [...new Set(kbEntries.map(item => item.topic).filter(Boolean))].sort();
+    select.replaceChildren();
+    const all = document.createElement("option");
+    all.value = ""; all.textContent = "All topics";
+    select.appendChild(all);
+    topics.forEach(topic => {
+        const option = document.createElement("option");
+        option.value = topic; option.textContent = topic;
+        select.appendChild(option);
+    });
+    select.value = topics.includes(selected) ? selected : "";
+}
+
+function kbFilteredEntries() {
+    const search = kbNormalize(document.getElementById("kb-search").value);
+    const topic = document.getElementById("kb-topic-filter").value;
+    const status = document.getElementById("kb-status-filter").value;
+    return kbEntries.filter(item => {
+        if (topic && item.topic !== topic) return false;
+        if (status !== "all" && item.status !== status) return false;
+        if (!search) return true;
+        return kbNormalize([
+            item.question, item.topic, item.answerBn, item.answerEn
+        ].join(" ")).includes(search);
+    });
+}
+
+function kbRenderList() {
+    const body = document.getElementById("kb-question-list");
+    const message = document.getElementById("kb-list-message");
+    const filtered = kbFilteredEntries();
+    const pageCount = Math.max(1, Math.ceil(filtered.length / KB_PAGE_SIZE));
+    kbCurrentPage = Math.min(kbCurrentPage, pageCount - 1);
+    const start = kbCurrentPage * KB_PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + KB_PAGE_SIZE);
+    body.replaceChildren();
+
+    pageItems.forEach(item => {
+        const row = document.createElement("tr");
+        const selectCell = document.createElement("td");
+        selectCell.style.cssText = "padding:9px;border-bottom:1px solid #e2e8f0;";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = kbSelectedEntries.has(item.entryId);
+        checkbox.setAttribute("aria-label", `Select ${item.question}`);
+        checkbox.addEventListener("change", () => {
+            if (checkbox.checked) kbSelectedEntries.add(item.entryId);
+            else kbSelectedEntries.delete(item.entryId);
+            kbUpdateBulkToolbar();
+        });
+        selectCell.appendChild(checkbox);
+        row.append(
+            selectCell,
+            analyticsCell(item.topic),
+            analyticsCell(item.question),
+            analyticsCell(item.source === "builtin" ? "Built-in" : item.source === "community" ? "Community" : "Admin"),
+            analyticsCell(item.status)
+        );
+        const actions = document.createElement("td");
+        actions.style.cssText = "padding:9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;";
+        const makeAction = (label, callback, color = "#334155") => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            button.style.cssText = `padding:6px 9px;margin:2px;border:1px solid #cbd5e1;border-radius:5px;background:white;color:${color};`;
+            button.addEventListener("click", callback);
+            return button;
+        };
+        actions.appendChild(makeAction("Edit", () => kbOpenEditor(item)));
+        actions.appendChild(makeAction("Clinical Review", () => kbCreateClinicalReview(item), "#0f766e"));
+        if (item.status === "pending") {
+            actions.appendChild(makeAction("Approve", () => kbSetStatus(item, "active"), "#15803d"));
+        }
+        actions.appendChild(makeAction("History", () => kbShowVersionHistory(item)));
+        actions.appendChild(makeAction(
+            item.status === "deleted" ? "Restore" : "Delete",
+            () => kbSetStatus(item, item.status === "deleted" ? "active" : "deleted"),
+            "#b91c1c"
+        ));
+        row.appendChild(actions);
+        body.appendChild(row);
+    });
+
+    if (!pageItems.length) {
+        const row = document.createElement("tr");
+        const cell = analyticsCell("No questions match this filter.");
+        cell.colSpan = 6;
+        row.appendChild(cell);
+        body.appendChild(row);
+    }
+
+    const pageSelect = document.getElementById("kb-select-page");
+    if (pageSelect) {
+        pageSelect.checked = pageItems.length > 0 && pageItems.every(item => kbSelectedEntries.has(item.entryId));
+        pageSelect.indeterminate = pageItems.some(item => kbSelectedEntries.has(item.entryId)) && !pageSelect.checked;
+    }
+    kbUpdateBulkToolbar();
+    message.textContent = `${filtered.length} matching question(s) · showing ${filtered.length ? start + 1 : 0}–${Math.min(start + KB_PAGE_SIZE, filtered.length)}`;
+    document.getElementById("kb-page-label").textContent = `Page ${kbCurrentPage + 1} of ${pageCount}`;
+    document.getElementById("kb-prev-page").disabled = kbCurrentPage <= 0;
+    document.getElementById("kb-next-page").disabled = kbCurrentPage >= pageCount - 1;
+}
+
+function kbUpdateBulkToolbar() {
+    const count = kbSelectedEntries.size;
+    const label = document.getElementById("kb-selected-count");
+    if (label) label.textContent = `${count} selected`;
+    ["kb-bulk-apply-topic", "kb-bulk-approve", "kb-bulk-delete", "kb-bulk-restore"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = count === 0;
+    });
+}
+
+async function kbShowVersionHistory(item) {
+    const panel = document.getElementById("kb-version-history");
+    const list = document.getElementById("kb-version-list");
+    document.getElementById("kb-version-title").textContent = item.question;
+    panel.hidden = false;
+    list.textContent = "Loading version history...";
+    try {
+        const snapshot = await getDocs(query(
+            collection(db, "chatbot_question_versions"),
+            where("entryId", "==", item.entryId)
+        ));
+        const records = snapshot.docs.map(entry => ({ id: entry.id, ...entry.data() }))
+            .sort((a, b) => String(b.changedAtClient || "").localeCompare(String(a.changedAtClient || "")));
+        list.replaceChildren();
+        if (!records.length) {
+            list.textContent = "No version history recorded for this question yet. Changes made before Task 18 are not available.";
+            return;
+        }
+        records.slice(0, 20).forEach(record => {
+            const card = document.createElement("div");
+            card.style.cssText = "padding:10px;margin:8px 0;border:1px solid #e2e8f0;border-radius:8px;";
+            const heading = document.createElement("strong");
+            heading.textContent = `${record.action || "change"} · ${record.changedAtClient ? new Date(record.changedAtClient).toLocaleString() : "date unavailable"}`;
+            const before = document.createElement("p");
+            before.textContent = `Before: ${record.before?.question || "—"} [${record.before?.status || "—"}]`;
+            const after = document.createElement("p");
+            after.textContent = `After: ${record.after?.question || "—"} [${record.after?.status || "—"}]`;
+            card.append(heading, before, after);
+            list.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Question version history error:", error);
+        list.textContent = "Version history unavailable. Check Firestore Rules.";
+    }
+}
+
+async function kbBulkChange(action, newTopic = null) {
+    const selected = kbEntries.filter(item => kbSelectedEntries.has(item.entryId));
+    if (!selected.length) return;
+    if (["approve", "restore"].includes(action) && typeof window.assessMedicalAnswer === "function") {
+        const flagged = selected.filter(item => window.assessMedicalAnswer(item).warnings.length);
+        if (flagged.length) {
+            alert(`${flagged.length} selected answer(s) failed the medical safety screen. They cannot be bulk-published; review them individually and send for clinician review.`);
+            return;
+        }
+    }
+    if (!confirm(`Apply "${action}" to ${selected.length} selected question(s)?`)) return;
+    try {
+        for (let start = 0; start < selected.length; start += 150) {
+            const chunk = selected.slice(start, start + 150);
+            const batch = writeBatch(db);
+            chunk.forEach(item => {
+                const status = action === "approve" ? "active"
+                    : action === "delete" ? "deleted"
+                    : action === "restore" ? "active" : item.status;
+                const topic = action === "topic" ? newTopic : item.topic;
+                const documentId = kbDocumentId(item);
+                const existingRecord = kbAdminRecords.find(record => record.id === documentId);
+                batch.set(doc(db, "chatbot_admin_question_bank", documentId), {
+                    entryId: item.entryId,
+                    source: item.source,
+                    topic,
+                    question: item.question,
+                    answerBn: item.answerBn,
+                    answerEn: item.answerEn,
+                    sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+                    status,
+                    updatedBy: auth.currentUser.uid,
+                    updatedAt: serverTimestamp(),
+                    createdAt: existingRecord && existingRecord.createdAt ? existingRecord.createdAt : serverTimestamp()
+                });
+                const versionRef = doc(collection(db, "chatbot_question_versions"));
+                batch.set(versionRef, {
+                    entryId: item.entryId,
+                    source: item.source,
+                    action: `bulk_${action}`,
+                    before: {
+                        topic: item.topic, question: item.question,
+                        answerBn: item.answerBn, answerEn: item.answerEn, sourceIds: item.sourceIds || [], status: item.status
+                    },
+                    after: {
+                        topic, question: item.question,
+                        answerBn: item.answerBn, answerEn: item.answerEn, sourceIds: item.sourceIds || [], status
+                    },
+                    changedBy: auth.currentUser.uid,
+                    changedAt: serverTimestamp(),
+                    changedAtClient: new Date().toISOString()
+                });
+            });
+            await batch.commit();
+        }
+        await logAdminActivity(`question_bulk_${action}`, "question_bank", "", `${selected.length} question(s) processed.`);
+        kbSelectedEntries.clear();
+        await kbLoadQuestionBank();
+        await kbCreateDailyBackup(`after-bulk-${action}`);
+    } catch (error) {
+        console.error("Bulk Question Bank operation failed:", error);
+        alert("Bulk operation failed. Check Firestore Rules and try again.");
+    }
+}
+
+function kbSetupBulkActions() {
+    document.getElementById("kb-select-page").addEventListener("change", event => {
+        const filtered = kbFilteredEntries();
+        const start = kbCurrentPage * KB_PAGE_SIZE;
+        const pageItems = filtered.slice(start, start + KB_PAGE_SIZE);
+        pageItems.forEach(item => {
+            if (event.target.checked) kbSelectedEntries.add(item.entryId);
+            else kbSelectedEntries.delete(item.entryId);
+        });
+        kbRenderList();
+    });
+    document.getElementById("kb-bulk-apply-topic").addEventListener("click", () => {
+        const topic = document.getElementById("kb-bulk-topic").value.trim().toLowerCase().replace(/\s+/g, "_");
+        if (!/^[a-z0-9_-]{2,60}$/.test(topic)) {
+            alert("Enter a valid topic slug (2–60 English letters, numbers, _ or -).");
+            return;
+        }
+        kbBulkChange("topic", topic);
+    });
+    document.getElementById("kb-bulk-approve").addEventListener("click", () => kbBulkChange("approve"));
+    document.getElementById("kb-bulk-delete").addEventListener("click", () => kbBulkChange("delete"));
+    document.getElementById("kb-bulk-restore").addEventListener("click", () => kbBulkChange("restore"));
+    document.getElementById("kb-bulk-clear").addEventListener("click", () => {
+        kbSelectedEntries.clear();
+        kbRenderList();
+    });
+}
+
+function kbOpenEditor(item = null) {
+    const form = document.getElementById("kb-editor-form");
+    form.hidden = false;
+    form.style.display = "grid";
+    document.getElementById("kb-editor-title").textContent = item ? "Edit Question" : "Add New Question";
+    document.getElementById("kb-entry-id").value = item ? item.entryId : "";
+    document.getElementById("kb-entry-source").value = item ? item.source : "custom";
+    document.getElementById("kb-topic").value = item ? item.topic : "";
+    document.getElementById("kb-question").value = item ? item.question : "";
+    document.getElementById("kb-answer-bn").value = item ? item.answerBn : "";
+    document.getElementById("kb-answer-en").value = item ? item.answerEn : "";
+    document.getElementById("kb-source-ids").value = item && Array.isArray(item.sourceIds) ? item.sourceIds.join(", ") : "";
+    document.getElementById("kb-publish-status").value = item ? (item.status === "deleted" ? "pending" : item.status) : "pending";
+    document.getElementById("kb-editor-status").textContent = "";
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function kbLoadQuestionBank() {
+    const message = document.getElementById("kb-list-message");
+    if (!message) return;
+    message.textContent = "Loading built-in and Admin-managed questions...";
+    try {
+        const [adminSnapshot, communitySnapshot] = await Promise.all([
+            getDocs(collection(db, "chatbot_admin_question_bank")),
+            getDocs(collection(db, "community_question_bank"))
+        ]);
+        kbAdminRecords = adminSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const changes = new Map(kbAdminRecords.map(item => [String(item.entryId), item]));
+        const entries = [];
+
+        (Array.isArray(window.dengueQuestionIndex) ? window.dengueQuestionIndex : [])
+            .filter(item => !item.communityApproved)
+            .forEach(item => {
+                const entryId = String(item.id);
+                const change = changes.get(entryId);
+                const displayChange = change && ["active", "pending"].includes(change.status);
+                entries.push({
+                    entryId, source: "builtin",
+                    topic: displayChange ? change.topic : item.topic,
+                    question: displayChange ? change.question : item.question,
+                    answerBn: displayChange ? change.answerBn : item.answerBn,
+                    answerEn: displayChange ? change.answerEn : item.answerEn,
+                    sourceIds: displayChange && Array.isArray(change.sourceIds) ? change.sourceIds : (Array.isArray(item.sourceIds) ? item.sourceIds : []),
+                    status: change && ["deleted", "pending"].includes(change.status) ? change.status : "active",
+                    documentId: change ? change.id : `static_${entryId}`
+                });
+            });
+
+        communitySnapshot.docs.forEach(snapshotItem => {
+            const data = snapshotItem.data();
+            if (data.status !== "approved") return;
+            const entryId = `community_${snapshotItem.id}`;
+            const change = changes.get(entryId);
+            const displayChange = change && ["active", "pending"].includes(change.status);
+            entries.push({
+                entryId, source: "community",
+                topic: displayChange ? change.topic : data.topic,
+                question: displayChange ? change.question : data.question,
+                answerBn: displayChange ? change.answerBn : data.answerBn,
+                answerEn: displayChange ? change.answerEn : data.answerEn,
+                sourceIds: displayChange && Array.isArray(change.sourceIds) ? change.sourceIds : (Array.isArray(data.sourceIds) ? data.sourceIds : []),
+                status: change && ["deleted", "pending"].includes(change.status) ? change.status : "active",
+                documentId: change ? change.id : `community_${snapshotItem.id}`
+            });
+        });
+
+        kbAdminRecords.filter(item => item.source === "custom").forEach(item => {
+            entries.push({
+                entryId: String(item.entryId),
+                source: "custom",
+                topic: item.topic,
+                question: item.question,
+                answerBn: item.answerBn,
+                answerEn: item.answerEn,
+                sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+                status: item.status,
+                documentId: item.id
+            });
+        });
+
+        kbEntries = entries;
+        document.getElementById("kb-total-count").textContent = entries.filter(item => item.status === "active").length;
+        document.getElementById("kb-builtin-count").textContent = entries.filter(item => item.source === "builtin" && item.status === "active").length;
+        document.getElementById("kb-community-count").textContent = entries.filter(item => item.source === "community" && item.status === "active").length;
+        document.getElementById("kb-custom-count").textContent = entries.filter(item => item.source === "custom" && item.status === "active").length;
+        kbRenderTopicFilter();
+        kbRenderList();
+    } catch (error) {
+        console.error("Knowledge base load error:", error);
+        message.textContent = "Could not load Question Bank. Check Firestore Rules and Admin access.";
+    }
+}
+
+async function kbSaveQuestion(event) {
+    event.preventDefault();
+    const statusElement = document.getElementById("kb-editor-status");
+    const save = document.getElementById("kb-save");
+    const topic = document.getElementById("kb-topic").value.trim().toLowerCase().replace(/\s+/g, "_");
+    const question = document.getElementById("kb-question").value.trim();
+    const answerBn = document.getElementById("kb-answer-bn").value.trim();
+    const answerEn = document.getElementById("kb-answer-en").value.trim();
+    const sourceIds = document.getElementById("kb-source-ids").value.split(",").map(value => value.trim()).filter(Boolean).slice(0, 10);
+    const oldEntryId = document.getElementById("kb-entry-id").value.trim();
+    const source = document.getElementById("kb-entry-source").value || "custom";
+    const targetStatus = document.getElementById("kb-publish-status").value === "active" ? "active" : "pending";
+
+    if (!/^[a-z0-9_-]{2,60}$/.test(topic) || question.length < 5 ||
+        answerBn.length < 20 || answerBn.length > 6000 ||
+        answerEn.length < 20 || answerEn.length > 6000) {
+        statusElement.textContent = "Topic must use 2–60 English letters/numbers/_/-. Question and both answers must be complete (20–6,000 characters each).";
+        return;
+    }
+
+    const normalized = kbNormalize(question);
+    const duplicate = kbEntries.find(item =>
+        item.status !== "deleted" && item.entryId !== oldEntryId &&
+        kbNormalize(item.question) === normalized
+    );
+    if (duplicate) {
+        alert(`Exact duplicate found in ${duplicate.topic}: ${duplicate.question}`);
+        return;
+    }
+
+    const similar = typeof window.findDengueQuestionDuplicates === "function"
+        ? window.findDengueQuestionDuplicates(question, kbEntries.filter(item =>
+            item.status !== "deleted" && item.entryId !== oldEntryId
+        ), 5)
+        : [];
+    if (similar.length && !confirm(
+        `Possible similar question (${similar[0].similarityPercent}%):\n${similar[0].question}\n\nSave anyway?`
+    )) return;
+
+    let entryId = oldEntryId;
+    let recordSource = source;
+    if (!entryId) {
+        recordSource = "custom";
+        entryId = `admin_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+    const documentId = recordSource === "builtin"
+        ? `static_${entryId}`
+        : recordSource === "community"
+            ? entryId.replace(/^community_/, "community_")
+            : entryId;
+    const previous = kbEntries.find(item => item.entryId === oldEntryId) || null;
+    const after = { topic, question, answerBn, answerEn, sourceIds, status: targetStatus };
+    if (targetStatus === "active" && typeof window.assessMedicalAnswer === "function") {
+        const audit = window.assessMedicalAnswer({ topic, question, answerBn, answerEn });
+        if (audit.warnings.length) {
+            statusElement.textContent = `Safety audit flagged this answer: ${audit.warnings.join(" ")} Save as Pending and send it for clinician review before publishing.`;
+            return;
+        }
+    }
+
+    save.disabled = true;
+    statusElement.textContent = "Saving...";
+    try {
+        await kbSaveVersionSnapshot(previous || {
+            entryId, source: recordSource, topic, question, answerBn, answerEn, status: "not_created"
+        }, previous ? "edit" : "create", after);
+        const previousRecord = kbAdminRecords.find(record => record.id === documentId);
+        await setDoc(doc(db, "chatbot_admin_question_bank", documentId), {
+            entryId,
+            source: recordSource,
+            topic,
+            question,
+            answerBn,
+            answerEn,
+            sourceIds,
+            status: targetStatus,
+            updatedBy: auth.currentUser.uid,
+            updatedAt: serverTimestamp(),
+            createdAt: previousRecord && previousRecord.createdAt ? previousRecord.createdAt : serverTimestamp()
+        });
+        await logAdminActivity(previous ? "question_updated" : "question_created", "question_bank", entryId, `${question.slice(0, 180)} · ${targetStatus}`);
+        statusElement.textContent = targetStatus === "pending"
+            ? "Saved as pending. It will not appear in the public chatbot until Admin approval."
+            : "Saved and published. Refresh the public chatbot to load the updated Question Bank.";
+        document.getElementById("kb-editor-form").hidden = true;
+        document.getElementById("kb-editor-form").style.display = "none";
+        document.getElementById("kb-status-filter").value = targetStatus;
+        await kbLoadQuestionBank();
+        await kbCreateDailyBackup("after-question-edit");
+    } catch (error) {
+        console.error("Knowledge base save error:", error);
+        statusElement.textContent = "Save failed. Check Firestore Rules and try again.";
+    } finally {
+        save.disabled = false;
+    }
+}
+
+async function kbSetStatus(item, nextStatus) {
+    const action = nextStatus === "active" && item.status === "pending"
+        ? "approve and publish"
+        : nextStatus === "deleted" ? "soft-delete" : "restore";
+    if (nextStatus === "active" && typeof window.assessMedicalAnswer === "function") {
+        const audit = window.assessMedicalAnswer(item);
+        if (audit.warnings.length) {
+            alert(`This answer needs clinician review before it can be published:\n\n${audit.warnings.join("\n")}`);
+            return;
+        }
+    }
+    if (!confirm(`Are you sure you want to ${action} this question?\n${item.question}`)) return;
+    try {
+        const documentId = kbDocumentId(item);
+        const existing = kbAdminRecords.find(record => record.id === documentId);
+        await kbSaveVersionSnapshot(item, action, {
+            topic: item.topic, question: item.question,
+            answerBn: item.answerBn, answerEn: item.answerEn,
+            sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+            status: nextStatus
+        });
+        await setDoc(doc(db, "chatbot_admin_question_bank", documentId), {
+            entryId: item.entryId,
+            source: item.source,
+            topic: item.topic,
+            question: item.question,
+            answerBn: item.answerBn,
+            answerEn: item.answerEn,
+            sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+            status: nextStatus,
+            updatedBy: auth.currentUser.uid,
+            updatedAt: serverTimestamp(),
+            createdAt: existing && existing.createdAt ? existing.createdAt : serverTimestamp()
+        });
+        await logAdminActivity("question_status_changed", "question_bank", item.entryId, `${item.question.slice(0, 160)} · ${item.status} → ${nextStatus}`);
+        await kbLoadQuestionBank();
+    } catch (error) {
+        console.error("Knowledge base status update failed:", error);
+        alert("Could not update question status. Check Firestore Rules.");
+    }
+}
+
+let kbImportRows = [];
+let kbImportSourceName = "";
+let kbImportPreviewReady = false;
+
+function kbImportHeaderKey(value) {
+    return String(value || "").toLowerCase().replace(/[\s_\-()[\]]/g, "").trim();
+}
+
+function kbImportCell(row, aliases) {
+    const keys = Object.keys(row || {});
+    const found = keys.find(key => aliases.includes(kbImportHeaderKey(key)));
+    return found === undefined ? "" : String(row[found] ?? "").trim();
+}
+
+function kbImportParseFile(file) {
+    return new Promise((resolve, reject) => {
+        if (!window.XLSX) {
+            reject(new Error("Excel/CSV reader library did not load. Check internet connection or use the CSV template."));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Could not read the selected file."));
+        reader.onload = event => {
+            try {
+                const bytes = new Uint8Array(event.target.result);
+                const workbook = window.XLSX.read(bytes, { type: "array" });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                if (!sheet) throw new Error("The selected file has no worksheet.");
+                const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+                resolve(rows);
+            } catch (error) {
+                reject(new Error(error.message || "Could not parse the file."));
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function kbImportValidateRows(rawRows) {
+    const result = [];
+    const seenInFile = new Set();
+    const existingQuestions = kbEntries.filter(item => item.status !== "deleted");
+    rawRows.forEach((raw, index) => {
+        const topicRaw = kbImportCell(raw, ["topic", "category"]);
+        const question = kbImportCell(raw, ["question", "questions"]);
+        const answerBn = kbImportCell(raw, ["answerbn", "answerbangla", "banglaanswer", "answerbn"]);
+        const answerEn = kbImportCell(raw, ["answeren", "answerenglish", "englishanswer"]);
+        const sourceRaw = kbImportCell(raw, ["sourceids", "sources", "references"]);
+        const sourceIds = sourceRaw.split(/[;,]/).map(value => value.trim()).filter(Boolean).slice(0, 10);
+        const topic = topicRaw.toLowerCase().replace(/\s+/g, "_");
+        const errors = [];
+        const normalized = kbNormalize(question);
+
+        if (!/^[a-z0-9_-]{2,60}$/.test(topic)) errors.push("Invalid topic: use 2–60 English letters, numbers, _ or -.");
+        if (question.length < 5 || question.length > 500) errors.push("Question must be 5–500 characters.");
+        if (answerBn.length < 20 || answerBn.length > 6000) errors.push("Bangla answer must be 20–6,000 characters.");
+        if (answerEn.length < 20 || answerEn.length > 6000) errors.push("English answer must be 20–6,000 characters.");
+        if (sourceRaw && sourceRaw.split(/[;,]/).filter(value => value.trim()).length > 10) errors.push("Use no more than 10 source IDs per question.");
+        if (sourceIds.some(id => !/^[a-zA-Z0-9_-]{2,180}$/.test(id))) errors.push("Source IDs may use only letters, numbers, underscore and hyphen.");
+
+        let duplicate = "";
+        if (normalized && seenInFile.has(normalized)) duplicate = "Duplicate question inside this file.";
+        else if (normalized && existingQuestions.some(item => kbNormalize(item.question) === normalized)) duplicate = "Exact duplicate already exists in Question Bank.";
+        if (normalized) seenInFile.add(normalized);
+
+        let similar = [];
+        if (!errors.length && !duplicate && typeof window.findDengueQuestionDuplicates === "function") {
+            try {
+                similar = window.findDengueQuestionDuplicates(question, existingQuestions, 3) || [];
+            } catch (error) {
+                console.warn("Similar-question check unavailable:", error);
+            }
+        }
+
+        result.push({
+            rowNumber: index + 2,
+            topic, question, answerBn, answerEn, sourceIds,
+            errors, duplicate,
+            similar: Array.isArray(similar) ? similar : [],
+            status: errors.length ? "error" : duplicate ? "duplicate" : "valid"
+        });
+    });
+    return result;
+}
+
+function kbImportRenderPreview() {
+    const area = document.getElementById("kb-import-preview-area");
+    const body = document.getElementById("kb-import-preview-rows");
+    area.hidden = false;
+    body.replaceChildren();
+    const valid = kbImportRows.filter(item => item.status === "valid").length;
+    const duplicates = kbImportRows.filter(item => item.status === "duplicate").length;
+    const errors = kbImportRows.filter(item => item.status === "error").length;
+    const similar = kbImportRows.filter(item => item.status === "valid" && item.similar.length).length;
+    document.getElementById("kb-import-total").textContent = kbImportRows.length;
+    document.getElementById("kb-import-valid").textContent = valid;
+    document.getElementById("kb-import-duplicates").textContent = duplicates;
+    document.getElementById("kb-import-errors").textContent = errors;
+    document.getElementById("kb-import-status").textContent =
+        `${kbImportSourceName}: ${valid} valid, ${duplicates} exact duplicates, ${errors} invalid, ${similar} possible similar questions.`;
+    kbImportRows.forEach(item => {
+        const row = document.createElement("tr");
+        const details = [
+            ...item.errors,
+            item.duplicate,
+            ...item.similar.slice(0, 2).map(match =>
+                `Similar to: ${match.question || match.matchedQuestion || "existing question"}`
+            )
+        ].filter(Boolean).join(" | ");
+        row.append(
+            analyticsCell(item.rowNumber),
+            analyticsCell(item.topic),
+            analyticsCell(item.question),
+            analyticsCell(item.status === "valid" && item.similar.length ? "warning" : item.status),
+            analyticsCell(details || "Ready to publish")
+        );
+        body.appendChild(row);
+    });
+    document.getElementById("kb-import-publish").disabled = valid === 0;
+    kbImportPreviewReady = true;
+}
+
+async function kbImportPreviewFile() {
+    const fileInput = document.getElementById("kb-import-file");
+    const status = document.getElementById("kb-import-status");
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+        status.textContent = "Please select a CSV or Excel file first.";
+        return;
+    }
+    const extension = file.name.split(".").pop().toLowerCase();
+    if (!["csv", "xlsx", "xls"].includes(extension)) {
+        status.textContent = "Unsupported file type. Upload CSV, XLSX or XLS.";
+        return;
+    }
+    status.textContent = "Reading and validating file...";
+    document.getElementById("kb-import-preview").disabled = true;
+    try {
+        const rawRows = await kbImportParseFile(file);
+        if (!rawRows.length) throw new Error("No data rows found. Check the header row and file contents.");
+        if (rawRows.length > 500) throw new Error(`This file contains ${rawRows.length} rows. Maximum supported per import is 500.`);
+        kbImportSourceName = file.name;
+        kbImportRows = kbImportValidateRows(rawRows);
+        kbImportRenderPreview();
+    } catch (error) {
+        console.error("Bulk import preview error:", error);
+        status.textContent = error.message || "Could not preview this file.";
+        document.getElementById("kb-import-preview-area").hidden = true;
+    } finally {
+        document.getElementById("kb-import-preview").disabled = false;
+    }
+}
+
+async function kbImportPublishApproved() {
+    const status = document.getElementById("kb-import-status");
+    const button = document.getElementById("kb-import-publish");
+    if (!kbImportPreviewReady) {
+        status.textContent = "Validate and preview the file before publishing.";
+        return;
+    }
+    const allowSimilar = document.getElementById("kb-import-allow-similar").checked;
+    const publishRows = kbImportRows.filter(item =>
+        item.status === "valid" && (allowSimilar || item.similar.length === 0)
+    );
+    if (!publishRows.length) {
+        status.textContent = "No rows are eligible to publish. Review errors, duplicates and similar-question warnings.";
+        return;
+    }
+    const warningCount = publishRows.filter(item => item.similar.length).length;
+    if (typeof window.assessMedicalAnswer === "function") {
+        const safetyFlags = publishRows.map(item => ({ item, audit: window.assessMedicalAnswer(item) }))
+            .filter(entry => entry.audit.warnings.length);
+        if (safetyFlags.length) {
+            const examples = safetyFlags.slice(0, 5).map(entry => `${entry.item.question}: ${entry.audit.warnings.join(" ")}`).join("\n\n");
+            status.textContent = `${safetyFlags.length} row(s) need clinician review. No rows were published. Remove risky dosing/emergency content, or add the flagged question as Pending and send it for clinician review before importing again.`;
+            alert(`Medical safety audit blocked this import. Examples:\n\n${examples}`);
+            return;
+        }
+    }
+    if (!confirm(
+        `Publish ${publishRows.length} question(s) from ${kbImportSourceName}?` +
+        (warningCount ? `\n${warningCount} row(s) have similar-question warnings.` : "") +
+        "\nThis will make them available to the public chatbot after refresh."
+    )) return;
+
+    button.disabled = true;
+    status.textContent = "Publishing approved questions...";
+    const batchId = `import_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const publishedAt = new Date().toISOString();
+    let published = 0;
+    const publishedEntryIds = [];
+    try {
+        // Firestore write batches are kept below the 500-write limit.
+        for (let start = 0; start < publishRows.length; start += 200) {
+            const chunk = publishRows.slice(start, start + 200);
+            const batch = writeBatch(db);
+            chunk.forEach((item, offset) => {
+                const entryId = `bulk_${batchId}_${start + offset}`;
+                publishedEntryIds.push(entryId);
+                const ref = doc(db, "chatbot_admin_question_bank", entryId);
+                batch.set(ref, {
+                    entryId,
+                    source: "custom",
+                    topic: item.topic,
+                    question: item.question,
+                    answerBn: item.answerBn,
+                    answerEn: item.answerEn,
+                    sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [],
+                    status: "active",
+                    batchId,
+                    importFile: kbImportSourceName.slice(0, 180),
+                    importedBy: auth.currentUser.uid,
+                    importedAt: serverTimestamp(),
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+                const versionRef = doc(collection(db, "chatbot_question_versions"));
+                batch.set(versionRef, {
+                    entryId,
+                    source: "custom",
+                    action: "bulk_import",
+                    before: null,
+                    after: {
+                        topic: item.topic, question: item.question,
+                        answerBn: item.answerBn, answerEn: item.answerEn,
+                        sourceIds: Array.isArray(item.sourceIds) ? item.sourceIds : [], status: "active"
+                    },
+                    importBatchId: batchId,
+                    changedBy: auth.currentUser.uid,
+                    changedAt: serverTimestamp(),
+                    changedAtClient: new Date().toISOString()
+                });
+            });
+            await batch.commit();
+            published += chunk.length;
+        }
+
+        await setDoc(doc(db, "chatbot_import_batches", batchId), {
+            batchId,
+            fileName: kbImportSourceName.slice(0, 180),
+            totalRows: kbImportRows.length,
+            publishedRows: published,
+            duplicateRows: kbImportRows.filter(item => item.status === "duplicate").length,
+            invalidRows: kbImportRows.filter(item => item.status === "error").length,
+            similarWarnings: warningCount,
+            publishedEntryIds,
+            status: "published",
+            createdBy: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
+            createdAtClient: publishedAt
+        });
+
+        status.textContent = `Successfully published ${published} question(s). Refresh the public chatbot to load them.`;
+        document.getElementById("kb-import-publish").disabled = true;
+        await logAdminActivity("question_import_published", "import_batch", batchId, `${published} question(s) imported from ${kbImportSourceName}.`);
+        await kbLoadQuestionBank();
+        await kbLoadImportHistory();
+    } catch (error) {
+        console.error("Bulk import publish error:", error);
+        status.textContent = `Publishing stopped after ${published} row(s). Check Firestore Rules and import history; do not retry blindly to avoid duplicates.`;
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function kbImportDownloadFailedRows() {
+    const failed = kbImportRows.filter(item => item.status !== "valid" || item.similar.length);
+    if (!failed.length) return;
+    const columns = ["rowNumber", "topic", "question", "answerBn", "answerEn", "status", "errors", "duplicate", "similarWarnings"];
+    const quote = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const csv = [
+        columns.join(","),
+        ...failed.map(item => [
+            item.rowNumber, item.topic, item.question, item.answerBn, item.answerEn,
+            item.status, item.errors.join("; "), item.duplicate,
+            item.similar.map(match => match.question || match.matchedQuestion || "").join("; ")
+        ].map(quote).join(","))
+    ].join("\r\n");
+    kbDownload(`question-import-review-${new Date().toISOString().slice(0, 10)}.csv`,
+        "\uFEFF" + csv, "text/csv;charset=utf-8");
+}
+
+async function kbRollbackImportBatch(batchRecord) {
+    let ids = Array.isArray(batchRecord.publishedEntryIds) ? batchRecord.publishedEntryIds : [];
+    if (!ids.length && batchRecord.batchId) {
+        const legacySnapshot = await getDocs(query(
+            collection(db, "chatbot_admin_question_bank"),
+            where("batchId", "==", batchRecord.batchId)
+        ));
+        ids = legacySnapshot.docs.map(item => item.id);
+    }
+    if (!ids.length) {
+        alert("No imported question records were found for this batch. It cannot be rolled back automatically.");
+        return;
+    }
+    if (batchRecord.status === "rolled_back") {
+        alert("This import batch has already been rolled back.");
+        return;
+    }
+    if (!confirm(`Rollback ${ids.length} question(s) from "${batchRecord.fileName || batchRecord.batchId}"? The questions will be soft-deleted and can be restored individually.`)) return;
+
+    try {
+        for (let start = 0; start < ids.length; start += 150) {
+            const chunk = ids.slice(start, start + 150);
+            const batch = writeBatch(db);
+            chunk.forEach(entryId => {
+                batch.update(doc(db, "chatbot_admin_question_bank", entryId), {
+                    status: "deleted",
+                    updatedBy: auth.currentUser.uid,
+                    updatedAt: serverTimestamp(),
+                    rollbackBatchId: batchRecord.batchId
+                });
+                const versionRef = doc(collection(db, "chatbot_question_versions"));
+                batch.set(versionRef, {
+                    entryId,
+                    source: "custom",
+                    action: "import_rollback",
+                    before: { status: "active" },
+                    after: { status: "deleted" },
+                    importBatchId: batchRecord.batchId,
+                    changedBy: auth.currentUser.uid,
+                    changedAt: serverTimestamp(),
+                    changedAtClient: new Date().toISOString()
+                });
+            });
+            await batch.commit();
+        }
+        await setDoc(doc(db, "chatbot_import_batches", batchRecord.batchId), {
+            status: "rolled_back",
+            rolledBackBy: auth.currentUser.uid,
+            rolledBackAt: serverTimestamp(),
+            rolledBackAtClient: new Date().toISOString()
+        }, { merge: true });
+        await logAdminActivity("import_batch_rollback", "import_batch", batchRecord.batchId, `${ids.length} imported question(s) soft-deleted.`);
+        await kbLoadQuestionBank();
+        await kbLoadImportHistory();
+        await kbCreateDailyBackup("after-import-rollback");
+        alert(`Rollback completed for ${ids.length} imported question(s).`);
+    } catch (error) {
+        console.error("Import rollback failed:", error);
+        alert("Rollback did not finish. Check Firestore and import history before retrying.");
+    }
+}
+
+async function kbLoadImportHistory() {
+    const container = document.getElementById("kb-import-history");
+    if (!container) return;
+    try {
+        const snapshot = await getDocs(collection(db, "chatbot_import_batches"));
+        const batches = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => String(b.createdAtClient || "").localeCompare(String(a.createdAtClient || "")))
+            .slice(0, 20);
+        container.replaceChildren();
+        if (!batches.length) {
+            container.textContent = "No import history yet.";
+            return;
+        }
+        const table = document.createElement("table");
+        table.style.cssText = "width:100%;border-collapse:collapse;text-align:left;";
+        const head = document.createElement("tr");
+        ["Date", "File", "Published", "Duplicates", "Errors", "Status", "Action"].forEach(label => {
+            const cell = document.createElement("th");
+            cell.textContent = label;
+            cell.style.cssText = "padding:8px;background:#475569;color:white;";
+            head.appendChild(cell);
+        });
+        const thead = document.createElement("thead"); thead.appendChild(head);
+        const tbody = document.createElement("tbody");
+        batches.forEach(item => {
+            const row = document.createElement("tr");
+            [
+                item.createdAtClient ? new Date(item.createdAtClient).toLocaleString() : "—",
+                item.fileName || "—", item.publishedRows ?? 0,
+                item.duplicateRows ?? 0, item.invalidRows ?? 0, item.status || "—"
+            ].forEach(value => row.appendChild(analyticsCell(value)));
+            const actionCell = document.createElement("td");
+            actionCell.style.cssText = "padding:8px;border-bottom:1px solid #e2e8f0;";
+            if (item.status === "published") {
+                const rollback = document.createElement("button");
+                rollback.type = "button";
+                rollback.textContent = "Rollback";
+                rollback.addEventListener("click", () => kbRollbackImportBatch(item));
+                actionCell.appendChild(rollback);
+            } else {
+                actionCell.textContent = item.status === "rolled_back" ? "Rolled back" : "—";
+            }
+            row.appendChild(actionCell);
+            tbody.appendChild(row);
+        });
+        table.append(thead, tbody);
+        container.appendChild(table);
+    } catch (error) {
+        console.error("Import history load error:", error);
+        container.textContent = "Import history unavailable. Check Firestore Rules.";
+    }
+}
+
+async function kbCreateDailyBackup(trigger = "daily-admin-open", force = false) {
+    if (!auth.currentUser || !Array.isArray(kbEntries) || !kbEntries.length) return null;
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const backupId = force
+        ? `manual_${Date.now()}`
+        : `daily_${dateKey}`;
+    try {
+        if (!force) {
+            const existing = await getDocs(query(
+                collection(db, "chatbot_question_bank_backups"),
+                where("dateKey", "==", dateKey)
+            ));
+            if (!existing.empty) {
+                await kbLoadBackupHistory();
+                return existing.docs[0].id;
+            }
+        }
+
+        const entries = kbExportRecords();
+        const chunkSize = 20;
+        const chunks = [];
+        for (let start = 0; start < entries.length; start += chunkSize) {
+            chunks.push(entries.slice(start, start + chunkSize));
+        }
+
+        const batch = writeBatch(db);
+        batch.set(doc(db, "chatbot_question_bank_backups", backupId), {
+            backupId,
+            dateKey,
+            trigger,
+            totalEntries: entries.length,
+            chunkCount: chunks.length,
+            status: "completed",
+            createdBy: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
+            createdAtClient: new Date().toISOString()
+        });
+        chunks.forEach((chunk, index) => {
+            batch.set(doc(db, "chatbot_question_bank_backups", backupId, "chunks", String(index).padStart(4, "0")), {
+                index,
+                entries: chunk,
+                createdAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
+        await kbLoadBackupHistory();
+        return backupId;
+    } catch (error) {
+        console.error("Automatic Question Bank backup failed:", error);
+        const container = document.getElementById("kb-backup-history");
+        if (container) container.textContent = "Automatic backup failed. Check Firestore Rules and quota.";
+        return null;
+    }
+}
+
+async function kbLoadBackupHistory() {
+    const container = document.getElementById("kb-backup-history");
+    if (!container) return;
+    try {
+        const snapshot = await getDocs(collection(db, "chatbot_question_bank_backups"));
+        const backups = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => String(b.createdAtClient || "").localeCompare(String(a.createdAtClient || "")))
+            .slice(0, 20);
+        container.replaceChildren();
+        if (!backups.length) {
+            container.textContent = "No Firestore backups yet.";
+            return;
+        }
+        backups.forEach(item => {
+            const row = document.createElement("p");
+            row.textContent = `${item.dateKey || item.createdAtClient || "—"} · ${item.totalEntries || 0} entries · ${item.chunkCount || 0} chunks · ${item.trigger || "backup"} · ${item.status || "—"}`;
+            container.appendChild(row);
+        });
+    } catch (error) {
+        console.error("Backup history load error:", error);
+        container.textContent = "Backup history unavailable. Check Firestore Rules.";
+    }
+}
+
+async function kbLoadMissedQuestions() {
+    const container = document.getElementById("kb-missed-questions");
+    if (!container) return;
+    container.textContent = "Loading low-match questions...";
+    try {
+        const snapshot = await getDocs(query(
+            collection(db, "chatbot_query_events"),
+            orderBy("createdAt", "desc"),
+            limit(1000)
+        ));
+        const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .filter(item => item.matchLevel === "low" || item.isUnmatched === true || Number(item.matchScore || 0) < 40)
+            .sort((a, b) => String(b.createdAtClient || "").localeCompare(String(a.createdAtClient || "")));
+        const grouped = new Map();
+        records.forEach(item => {
+            const key = kbNormalize(item.question);
+            if (!key) return;
+            const previous = grouped.get(key) || {
+                question: item.question,
+                count: 0,
+                latest: item.createdAtClient || "",
+                language: item.language || "unknown",
+                bestMatch: item.matchedQuestion || ""
+            };
+            previous.count += 1;
+            if (String(item.createdAtClient || "") > String(previous.latest)) {
+                previous.latest = item.createdAtClient || "";
+                previous.question = item.question || previous.question;
+                previous.bestMatch = item.matchedQuestion || previous.bestMatch;
+            }
+            grouped.set(key, previous);
+        });
+        const top = [...grouped.values()].sort((a, b) => b.count - a.count).slice(0, 30);
+        container.replaceChildren();
+        if (!top.length) {
+            container.textContent = "No low-match questions found in the latest 1,000 query events.";
+            return;
+        }
+        const table = document.createElement("table");
+        table.style.cssText = "width:100%;border-collapse:collapse;text-align:left;";
+        const head = document.createElement("tr");
+        ["Count", "User question", "Language", "Last asked", "Closest match"].forEach(label => {
+            const cell = document.createElement("th");
+            cell.textContent = label;
+            cell.style.cssText = "padding:8px;background:#475569;color:white;";
+            head.appendChild(cell);
+        });
+        const thead = document.createElement("thead"); thead.appendChild(head);
+        const tbody = document.createElement("tbody");
+        top.forEach(item => {
+            const row = document.createElement("tr");
+            [
+                item.count, item.question, item.language,
+                item.latest ? new Date(item.latest).toLocaleString() : "—",
+                item.bestMatch || "No reliable match"
+            ].forEach(value => row.appendChild(analyticsCell(value)));
+            tbody.appendChild(row);
+        });
+        table.append(thead, tbody);
+        container.appendChild(table);
+        const exportButton = document.createElement("button");
+        exportButton.type = "button";
+        exportButton.textContent = "Export Missed Questions CSV";
+        exportButton.addEventListener("click", () => {
+            const quote = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+            const csv = [
+                "count,question,language,lastAsked,closestMatch",
+                ...top.map(item => [item.count, item.question, item.language, item.latest, item.bestMatch].map(quote).join(","))
+            ].join("\r\n");
+            kbDownload("dengue-missed-questions.csv", "\uFEFF" + csv, "text/csv;charset=utf-8");
+        });
+        container.appendChild(exportButton);
+    } catch (error) {
+        console.error("Missed-question report error:", error);
+        container.textContent = "Missed-question report unavailable. Check Firestore Rules.";
+    }
+}
+
+async function kbCreateClinicalReview(item) {
+    const reviewerUid = document.getElementById("clinical-reviewer-uid").value.trim();
+    if (!reviewerUid) {
+        alert("Enter an enabled clinical reviewer's Firebase UID in the Clinician Review Workflow section first.");
+        return;
+    }
+    if (!confirm(`Send this answer for independent clinical review?\n${item.question}`)) return;
+    try {
+        const userSnap = await getDoc(doc(db, "users", reviewerUid));
+        if (!userSnap.exists() || userSnap.data().clinicalReviewer !== true || !["doctor", "clinician"].includes(String(userSnap.data().role || ""))) {
+            throw new Error("This UID is not enabled as a clinical reviewer.");
+        }
+        const refs = typeof window.getMedicalReferencesForAnswer === "function" ? window.getMedicalReferencesForAnswer(item) : [];
+        const sourceIds = Array.isArray(item.sourceIds) && item.sourceIds.length ? item.sourceIds : refs.map(source => source.id);
+        const fingerprint = window.getMedicalAnswerFingerprint(item.answerBn, item.answerEn);
+        const existing = await getDocs(query(collection(db, "chatbot_clinical_reviews"), where("sourceEntryId", "==", item.entryId)));
+        const pending = existing.docs.some(record => record.data().status === "pending");
+        if (pending && !confirm("A pending review already exists for this answer. Create another review request?")) return;
+        await addDoc(collection(db, "chatbot_clinical_reviews"), {
+            sourceEntryId: String(item.entryId),
+            sourceType: String(item.source || "custom"),
+            sourceQuestion: String(item.question || "").slice(0, 500),
+            topic: String(item.topic || "general").slice(0, 80),
+            answerBn: String(item.answerBn || "").slice(0, 6000),
+            answerEn: String(item.answerEn || "").slice(0, 6000),
+            answerFingerprint: fingerprint,
+            sourceIds: sourceIds.slice(0, 10),
+            sources: refs.slice(0, 5).map(source => ({ id: source.id, title: source.title, organization: source.organization, url: source.url })),
+            assignedReviewerUid: reviewerUid,
+            status: "pending",
+            submittedBy: auth.currentUser.uid,
+            createdAt: serverTimestamp(),
+            createdAtClient: new Date().toISOString()
+        });
+        await logAdminActivity("clinical_review_assigned", "clinical_review", item.entryId, `Assigned review to clinician UID ${reviewerUid}.`);
+        alert("Clinical review request sent. It will not change the live chatbot answer.");
+        await loadClinicalReviewQueue();
+    } catch (error) {
+        console.error("Clinical review request failed:", error);
+        alert(error.message || "Could not create the clinical review request. Check Firestore Rules.");
+    }
+}
+
+async function kbLoadMedicalAnswerAudit() {
+    const container = document.getElementById("kb-medical-audit-results");
+    if (!container) return;
+    if (typeof window.assessMedicalAnswer !== "function") {
+        container.textContent = "Medical safety audit module is unavailable.";
+        return;
+    }
+    const results = kbEntries.filter(item => item.status !== "deleted").map(item => ({ item, audit: window.assessMedicalAnswer(item) }));
+    const flagged = results.filter(entry => entry.audit.warnings.length);
+    container.replaceChildren();
+    const summary = document.createElement("p");
+    summary.textContent = `${results.length} answers screened · ${flagged.length} need human review · ${results.length - flagged.length} passed automated checks only (not clinical verification).`;
+    container.appendChild(summary);
+    flagged.slice(0, 50).forEach(({ item, audit }) => {
+        const card = document.createElement("article");
+        card.style.cssText = "padding:10px;border:1px solid #fed7aa;border-radius:8px;margin:8px 0;background:#fff7ed;";
+        const title = document.createElement("strong"); title.textContent = `${item.topic} · ${item.question}`;
+        const details = document.createElement("p"); details.textContent = audit.warnings.join(" ");
+        const button = document.createElement("button"); button.type = "button"; button.textContent = "Send for Clinical Review";
+        button.addEventListener("click", () => kbCreateClinicalReview(item));
+        card.append(title, details, button); container.appendChild(card);
+    });
+    if (!flagged.length) {
+        const note = document.createElement("p"); note.textContent = "No rule-based flags found. This does not mean the answers are clinically verified."; container.appendChild(note);
+    }
+}
+
+async function loadMedicalSourceRegistryAdmin() {
+    const container = document.getElementById("medical-source-list");
+    if (!container) return;
+    try {
+        const snapshot = await getDocs(collection(db, "medical_sources"));
+        const custom = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        if (typeof window.loadMedicalSourceRegistry === "function") window.loadMedicalSourceRegistry(custom);
+        const sources = typeof window.getMedicalSourceRegistry === "function" ? window.getMedicalSourceRegistry() : custom;
+        container.replaceChildren();
+        sources.forEach(source => {
+            const card = document.createElement("article"); card.style.cssText = "padding:10px;border:1px solid #dbe3ea;border-radius:8px;";
+            const title = document.createElement("strong"); title.textContent = source.title;
+            const org = document.createElement("p"); org.textContent = source.organization || "";
+            const link = document.createElement("a"); link.href = source.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = source.url;
+            const meta = document.createElement("small");
+            const due = source.reviewDueAt ? new Date(source.reviewDueAt) : null;
+            const stale = due && !Number.isNaN(due.getTime()) && due.getTime() < Date.now();
+            meta.textContent = `Topics: ${(source.topics || []).join(", ")} · ${source.reviewStatus || "unverified"}${stale ? " · REVIEW OVERDUE" : ""}${source.builtIn ? " · built-in reference" : ""}`;
+            card.append(title, org, link, meta);
+            if (!source.builtIn) {
+                const dueInput = document.createElement("input"); dueInput.type = "date"; dueInput.value = source.reviewDueAt ? String(source.reviewDueAt).slice(0, 10) : "";
+                const saveDue = document.createElement("button"); saveDue.type = "button"; saveDue.textContent = "Update review due date";
+                saveDue.addEventListener("click", async () => {
+                    await updateDoc(doc(db, "medical_sources", source.id), { reviewDueAt: dueInput.value || null, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.uid });
+                    await logAdminActivity("medical_source_review_date_updated", "medical_source", source.id, `Review due date set to ${dueInput.value || "not set"}.`);
+                    await loadMedicalSourceRegistryAdmin();
+                });
+                const archive = document.createElement("button"); archive.type = "button"; archive.textContent = source.status === "inactive" ? "Already archived" : "Archive"; archive.disabled = source.status === "inactive";
+                archive.addEventListener("click", async () => {
+                    await updateDoc(doc(db, "medical_sources", source.id), { status: "inactive", updatedAt: serverTimestamp(), updatedBy: auth.currentUser.uid });
+                    await logAdminActivity("medical_source_archived", "medical_source", source.id, `Archived source: ${source.title}.`);
+                    await loadMedicalSourceRegistryAdmin();
+                });
+                card.append(dueInput, saveDue, archive);
+            }
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Medical source registry load failed:", error);
+        container.textContent = "Could not load medical sources. Check Firestore Rules.";
+    }
+}
+
+async function loadClinicalReviewQueue() {
+    const message = document.getElementById("clinical-review-queue-message");
+    const container = document.getElementById("clinical-review-queue-list");
+    if (!message || !container) return;
+    try {
+        const snapshot = await getDocs(query(collection(db, "chatbot_clinical_reviews"), orderBy("createdAt", "desc"), limit(100)));
+        const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        container.replaceChildren();
+        message.textContent = `${records.length} clinical review request(s) in latest 100 records.`;
+        records.forEach(item => {
+            const card = document.createElement("article"); card.style.cssText = "padding:12px;border:1px solid #dbe3ea;border-radius:9px;";
+            const heading = document.createElement("strong"); heading.textContent = `${item.status || "pending"} · ${item.sourceQuestion || "Question unavailable"}`;
+            const details = document.createElement("p"); details.textContent = `Assigned UID: ${item.assignedReviewerUid || "—"} · Topic: ${item.topic || "—"} · Submitted: ${item.createdAtClient || "—"}`;
+            const notes = document.createElement("p"); notes.textContent = item.reviewerNotes ? `Reviewer notes: ${item.reviewerNotes}` : "No reviewer notes yet.";
+            card.append(heading, details, notes); container.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Clinical review queue load failed:", error);
+        message.textContent = "Could not load clinical review queue. Check Firestore Rules.";
+    }
+}
+
+async function loadChatbotDoctorVerification() {
+    const message = document.getElementById("chatbot-doctor-verification-message");
+    const container = document.getElementById("chatbot-doctor-verification-list");
+    if (!message || !container) return;
+    try {
+        const snapshot = await getDocs(collection(db, "public_doctors"));
+        container.replaceChildren();
+        if (snapshot.empty) { message.textContent = "No public doctor profiles found. Add a profile before verifying it."; return; }
+        message.textContent = `${snapshot.size} public doctor profile(s). Only explicitly verified profiles can appear in chatbot recommendations.`;
+        snapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const card = document.createElement("article"); card.style.cssText = "padding:12px;border:1px solid #dbe3ea;border-radius:9px;display:grid;gap:7px;";
+            const title = document.createElement("strong"); title.textContent = `${data.name || "Doctor"} · ${data.hospital || "Hospital not set"}`;
+            const id = document.createElement("small"); id.textContent = `Document ID: ${docSnap.id} · Status: ${data.status || "not set"} · Chatbot verified: ${data.chatbotVerified === true ? "Yes" : "No"}`;
+            const registration = document.createElement("input"); registration.maxLength = 40; registration.placeholder = "BMDC registration number"; registration.value = data.bmdcRegistrationNumber || "";
+            const confirmBox = document.createElement("label"); const check = document.createElement("input"); check.type = "checkbox"; confirmBox.append(check, document.createTextNode(" I checked this doctor's identity and BMDC registration against an official source."));
+            const verify = document.createElement("button"); verify.type = "button"; verify.textContent = "Verify for Chatbot";
+            verify.addEventListener("click", async () => {
+                const number = registration.value.trim();
+                if (!check.checked || number.length < 3) { alert("Confirm official credential verification and enter the BMDC registration number."); return; }
+                if (!confirm(`Mark ${data.name || "this doctor"} as verified for chatbot recommendations?`)) return;
+                try {
+                    await updateDoc(doc(db, "public_doctors", docSnap.id), { status: "approved", chatbotVerified: true, bmdcRegistrationNumber: number, chatbotVerifiedBy: auth.currentUser.uid, chatbotVerifiedAt: serverTimestamp() });
+                    await logAdminActivity("doctor_chatbot_verified", "public_doctor", docSnap.id, `Verified ${data.name || "doctor"} for chatbot recommendations.`);
+                    await loadChatbotDoctorVerification();
+                } catch (error) { console.error(error); alert("Could not save doctor verification. Check Firestore Rules."); }
+            });
+            const revoke = document.createElement("button"); revoke.type = "button"; revoke.textContent = "Remove chatbot verification"; revoke.disabled = data.chatbotVerified !== true;
+            revoke.addEventListener("click", async () => {
+                if (!confirm("Remove this doctor's chatbot verification?")) return;
+                await updateDoc(doc(db, "public_doctors", docSnap.id), { chatbotVerified: false, chatbotVerificationRevokedAt: serverTimestamp(), chatbotVerificationRevokedBy: auth.currentUser.uid });
+                await logAdminActivity("doctor_chatbot_verification_revoked", "public_doctor", docSnap.id, "Revoked chatbot recommendation verification.");
+                await loadChatbotDoctorVerification();
+            });
+            card.append(title, id, registration, confirmBox, verify, revoke); container.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Doctor verification list failed:", error);
+        message.textContent = "Could not load public doctor profiles. Check Firestore Rules.";
+    }
+}
+
+function setupBatch2AdminControls() {
+    const sourceForm = document.getElementById("medical-source-form");
+    if (sourceForm) sourceForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const message = document.getElementById("medical-source-message");
+        const title = document.getElementById("medical-source-title").value.trim();
+        const organization = document.getElementById("medical-source-org").value.trim();
+        const urlText = document.getElementById("medical-source-url").value.trim();
+        const topics = document.getElementById("medical-source-topics").value.split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
+        const allowedTopics = new Set(["general", "symptoms", "prevention", "tests", "platelets", "food", "medicine", "recovery", "warning", "transmission"]);
+        try {
+            const url = new URL(urlText);
+            const allowedDomains = ["dghs.gov.bd", "cdc.gov", "who.int", "ncbi.nlm.nih.gov"];
+            if (url.protocol !== "https:" || !allowedDomains.some(domain => url.hostname === domain || url.hostname.endsWith(`.${domain}`))) throw new Error("Use HTTPS from DGHS, CDC, WHO or NCBI domains only.");
+            if (!topics.length || topics.some(topic => !allowedTopics.has(topic))) throw new Error("Use only supported topics: general, symptoms, prevention, tests, platelets, food, medicine, recovery, warning, transmission.");
+            const due = document.getElementById("medical-source-due").value;
+            const sourceRef = await addDoc(collection(db, "medical_sources"), { title, organization, url: url.href, topics, reviewDueAt: due || null, reviewStatus: "unverified", status: "active", createdBy: auth.currentUser.uid, createdAt: serverTimestamp(), createdAtClient: new Date().toISOString() });
+            await logAdminActivity("medical_source_created", "medical_source", sourceRef.id, `${title} · ${organization}`);
+            sourceForm.reset(); message.textContent = "Reference added as unverified. A clinician must review it before it is cited as part of an approved answer.";
+            await loadMedicalSourceRegistryAdmin();
+        } catch (error) { message.textContent = error.message || "Could not save source. Check Firestore Rules."; }
+    });
+    const reviewerForm = document.getElementById("clinical-reviewer-access-form");
+    if (reviewerForm) reviewerForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const uid = document.getElementById("clinical-reviewer-uid").value.trim();
+        const message = document.getElementById("clinical-reviewer-access-message");
+        try {
+            const ref = doc(db, "users", uid); const profile = await getDoc(ref);
+            if (!profile.exists() || !["doctor", "clinician"].includes(String(profile.data().role || ""))) throw new Error("UID must belong to an existing doctor account.");
+            await updateDoc(ref, { clinicalReviewer: true, clinicalReviewerEnabledBy: auth.currentUser.uid, clinicalReviewerEnabledAt: serverTimestamp() });
+            await logAdminActivity("clinical_reviewer_enabled", "user", uid, `Enabled reviewer access for ${profile.data().name || uid}.`);
+            message.textContent = `Clinical reviewer enabled for ${profile.data().name || uid}.`; 
+        } catch (error) { message.textContent = error.message || "Could not enable reviewer. Check Admin permissions."; }
+    });
+    const disableReviewer = document.getElementById("clinical-reviewer-disable");
+    if (disableReviewer) disableReviewer.addEventListener("click", async () => {
+        const uid = document.getElementById("clinical-reviewer-uid").value.trim();
+        const message = document.getElementById("clinical-reviewer-access-message");
+        if (!uid || !confirm("Disable clinical reviewer access for this UID?")) return;
+        try {
+            const ref = doc(db, "users", uid); const profile = await getDoc(ref);
+            if (!profile.exists()) throw new Error("User profile not found.");
+            await updateDoc(ref, { clinicalReviewer: false, clinicalReviewerDisabledBy: auth.currentUser.uid, clinicalReviewerDisabledAt: serverTimestamp() });
+            await logAdminActivity("clinical_reviewer_disabled", "user", uid, `Disabled reviewer access for ${profile.data().name || uid}.`);
+            message.textContent = `Clinical reviewer disabled for ${profile.data().name || uid}.`;
+        } catch (error) { message.textContent = error.message || "Could not disable reviewer."; }
+    });
+    const refresh = document.getElementById("clinical-review-refresh"); if (refresh) refresh.addEventListener("click", loadClinicalReviewQueue);
+}
+
+function setupKnowledgeManagement() {
+    const form = document.getElementById("kb-editor-form");
+    if (!form) return;
+    document.getElementById("kb-add-new").addEventListener("click", () => kbOpenEditor());
+    document.getElementById("kb-export-complete").addEventListener("click", kbExportCompleteBundle);
+    document.getElementById("kb-backup-now").addEventListener("click", async () => {
+        const backupId = await kbCreateDailyBackup("manual-admin-backup", true);
+        alert(backupId ? `Backup created: ${backupId}` : "Backup could not be created. Check Firestore Rules.");
+    });
+    document.getElementById("kb-missed-refresh").addEventListener("click", kbLoadMissedQuestions);
+    document.getElementById("kb-medical-audit-refresh").addEventListener("click", kbLoadMedicalAnswerAudit);
+    document.getElementById("kb-version-close").addEventListener("click", () => {
+        document.getElementById("kb-version-history").hidden = true;
+    });
+    document.getElementById("kb-import-preview").addEventListener("click", kbImportPreviewFile);
+    document.getElementById("kb-import-publish").addEventListener("click", kbImportPublishApproved);
+    document.getElementById("kb-import-failed-download").addEventListener("click", kbImportDownloadFailedRows);
+    document.getElementById("kb-import-clear").addEventListener("click", () => {
+        kbImportRows = [];
+        kbImportPreviewReady = false;
+        document.getElementById("kb-import-file").value = "";
+        document.getElementById("kb-import-preview-area").hidden = true;
+        document.getElementById("kb-import-status").textContent = "Preview cleared.";
+    });
+    document.getElementById("kb-import-template").addEventListener("click", () => {
+        const csv = "topic,question,answerBn,answerEn,sourceIds\r\nsymptoms,ডেঙ্গুর সাধারণ লক্ষণ কী?,ডেঙ্গুর সাধারণ লক্ষণ সম্পর্কে অন্তত বিশ অক্ষরের একটি যাচাইকৃত বাংলা উত্তর লিখুন।,Write a medically reviewed English answer of at least twenty characters about common dengue symptoms.,dghs_dengue_2025;cdc_clinical_care";
+        kbDownload("dengue-question-import-template.csv", "\uFEFF" + csv, "text/csv;charset=utf-8");
+    });
+    document.getElementById("kb-cancel").addEventListener("click", () => { form.hidden = true; form.style.display = "none"; });
+    form.addEventListener("submit", kbSaveQuestion);
+    document.getElementById("kb-search").addEventListener("input", () => { kbCurrentPage = 0; kbRenderList(); });
+    document.getElementById("kb-topic-filter").addEventListener("change", () => { kbCurrentPage = 0; kbRenderList(); });
+    document.getElementById("kb-status-filter").addEventListener("change", () => { kbCurrentPage = 0; kbRenderList(); });
+    document.getElementById("kb-prev-page").addEventListener("click", () => { kbCurrentPage = Math.max(0, kbCurrentPage - 1); kbRenderList(); });
+    document.getElementById("kb-next-page").addEventListener("click", () => { kbCurrentPage++; kbRenderList(); });
+    kbSetupBulkActions();
+
+    document.getElementById("kb-export-json").addEventListener("click", () => {
+        kbDownload(`dengue-question-bank-${new Date().toISOString().slice(0, 10)}.json`,
+            JSON.stringify(kbExportRecords(), null, 2), "application/json;charset=utf-8");
+    });
+    document.getElementById("kb-backup-json").addEventListener("click", () => {
+        const backup = {
+            exportedAt: new Date().toISOString(),
+            project: "Smart Dengue Management System",
+            task: 16,
+            entries: kbExportRecords()
+        };
+        kbDownload(`dengue-question-bank-backup-${new Date().toISOString().slice(0, 10)}.json`,
+            JSON.stringify(backup, null, 2), "application/json;charset=utf-8");
+    });
+    document.getElementById("kb-export-csv").addEventListener("click", () => {
+        const columns = ["entryId", "source", "topic", "question", "answerBn", "answerEn", "sourceIds", "status"];
+        const quote = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+        const csv = [columns.join(","), ...kbExportRecords().map(item => columns.map(key => quote(Array.isArray(item[key]) ? item[key].join(";") : item[key])).join(","))].join("\r\n");
+        kbDownload(`dengue-question-bank-${new Date().toISOString().slice(0, 10)}.csv`,
+            "\uFEFF" + csv, "text/csv;charset=utf-8");
+    });
+
+    kbLoadQuestionBank().then(() => kbCreateDailyBackup("daily-admin-open")).then(kbLoadMedicalAnswerAudit);
+    kbLoadImportHistory();
+    kbLoadBackupHistory();
+    kbLoadMissedQuestions();
+}
+
+
+async function loadAnswerImprovementQueue() {
+    const message = document.getElementById("answer-issues-message");
+    const list = document.getElementById("answer-issues-list");
+    const historyBody = document.getElementById("answer-correction-history");
+    if (!message || !list) return;
+
+    try {
+        const [pendingSnapshot, overridesSnapshot, rejectedSnapshot, historySnapshot, allIssuesSnapshot] = await Promise.all([
+            getDocs(query(collection(db, "chatbot_answer_issues"), where("status", "==", "pending"))),
+            getDocs(collection(db, "chatbot_answer_overrides")),
+            getDocs(query(collection(db, "chatbot_answer_issues"), where("status", "==", "rejected"))),
+            getDocs(query(collection(db, "chatbot_answer_correction_history"), orderBy("createdAt", "desc"), limit(30))),
+            getDocs(collection(db, "chatbot_answer_issues"))
+        ]);
+
+        const issues = pendingSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const allIssues = allIssuesSnapshot.docs.map(item => item.data());
+        const overrides = overridesSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const rejectedCount = rejectedSnapshot.size;
+
+        document.getElementById("answer-issues-pending").textContent = issues.length;
+        document.getElementById("answer-corrections-total").textContent =
+            overrides.filter(item => item.status === "approved").length;
+        document.getElementById("answer-issues-rejected").textContent = rejectedCount;
+
+        issues.sort((a, b) => {
+            const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+            const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+            return bt - at;
+        });
+        list.replaceChildren();
+
+        if (!issues.length) {
+            message.textContent = "No pending answer issues. New Not Helpful feedback will appear here.";
+        } else {
+            message.textContent = `Review ${issues.length} pending answer issue(s).`;
+        }
+
+        issues.forEach(issue => {
+            const card = document.createElement("article");
+            card.style.cssText = "border:1px solid #dbe3ea;border-radius:12px;padding:16px;display:grid;gap:10px;background:#fff;";
+
+            function addTextBlock(label, value) {
+                const block = document.createElement("div");
+                const heading = document.createElement("strong");
+                heading.textContent = label;
+                const content = document.createElement("p");
+                content.textContent = value || "Not available";
+                content.style.cssText = "white-space:pre-wrap;margin:5px 0;color:#334155;";
+                block.append(heading, content);
+                card.appendChild(block);
+            }
+
+            addTextBlock("User question", issue.question);
+            addTextBlock("Matched question-bank entry (correction target)", issue.sourceQuestion || issue.question);
+            addTextBlock("Previous answer shown to user", issue.answerPreview);
+            addTextBlock("Original question-bank answer — Bangla", issue.matchedAnswerBn);
+            addTextBlock("Original question-bank answer — English", issue.matchedAnswerEn);
+            addTextBlock("Topic / match score", `${issue.intent || "Unknown"} · ${issue.matchScore ?? "—"}%`);
+            addTextBlock("User feedback reason", issue.feedbackReason || "Not provided");
+            addTextBlock("User feedback comment", issue.feedbackComment || "Not provided");
+
+            const bnLabel = document.createElement("label");
+            bnLabel.textContent = "Corrected answer — Bangla";
+            const bn = document.createElement("textarea");
+            bn.rows = 4; bn.maxLength = 4000;
+            bn.placeholder = "চিকিৎসাগতভাবে যাচাইকৃত বাংলা উত্তর লিখুন...";
+            bn.style.cssText = "width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;";
+            bnLabel.appendChild(bn); card.appendChild(bnLabel);
+
+            const enLabel = document.createElement("label");
+            enLabel.textContent = "Corrected answer — English";
+            const en = document.createElement("textarea");
+            en.rows = 4; en.maxLength = 4000;
+            en.placeholder = "Write the clinically reviewed English answer...";
+            en.style.cssText = "width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:7px;";
+            enLabel.appendChild(en); card.appendChild(enLabel);
+
+            const note = document.createElement("p");
+            note.textContent = "Only publish after checking the medical content. Approval creates a new version and preserves the previous version in Correction History.";
+            note.style.cssText = "font-size:12px;color:#92400e;";
+            card.appendChild(note);
+
+            const actions = document.createElement("div");
+            actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;";
+            const approve = document.createElement("button");
+            approve.type = "button"; approve.textContent = "Approve & Publish Correction";
+            approve.style.cssText = "padding:10px 14px;background:#087f8c;color:#fff;border:0;border-radius:7px;cursor:pointer;";
+            const reject = document.createElement("button");
+            reject.type = "button"; reject.textContent = "Reject issue";
+            reject.style.cssText = "padding:10px 14px;background:#fff;color:#b91c1c;border:1px solid #fecaca;border-radius:7px;cursor:pointer;";
+
+            approve.addEventListener("click", async () => {
+                const answerBn = bn.value.trim();
+                const answerEn = en.value.trim();
+                const sourceQuestion = String(issue.sourceQuestion || issue.question || "").trim();
+                if (sourceQuestion.length < 3 || answerBn.length < 20 || answerEn.length < 20) {
+                    alert("Provide a valid source question and complete Bangla and English corrections (at least 20 characters each).");
+                    return;
+                }
+                if (typeof window.assessMedicalAnswer === "function") {
+                    const audit = window.assessMedicalAnswer({ topic: issue.intent, question: sourceQuestion, answerBn, answerEn });
+                    if (audit.warnings.length) {
+                        alert(`Medical safety audit requires clinician review before publishing:\n\n${audit.warnings.join("\n")}`);
+                        return;
+                    }
+                }
+                if (!confirm("Publish this corrected answer to the live chatbot? The previous version will be kept in history.")) return;
+
+                approve.disabled = true; reject.disabled = true;
+                try {
+                    const issueRef = doc(db, "chatbot_answer_issues", issue.id);
+                    const overrideId = window.getDengueQuestionKey(sourceQuestion);
+                    const overrideRef = doc(db, "chatbot_answer_overrides", overrideId);
+                    const historyRef = doc(collection(db, "chatbot_answer_correction_history"));
+                    await runTransaction(db, async transaction => {
+                        const issueSnap = await transaction.get(issueRef);
+                        const overrideSnap = await transaction.get(overrideRef);
+                        if (!issueSnap.exists() || issueSnap.data().status !== "pending") {
+                            throw new Error("This issue is no longer pending.");
+                        }
+                        const previous = overrideSnap.exists() ? overrideSnap.data() : null;
+                        const version = Number(previous && previous.version || 0) + 1;
+                        transaction.set(overrideRef, {
+                            sourceQuestion,
+                            answerBn,
+                            answerEn,
+                            status: "approved",
+                            version,
+                            previousAnswerBn: previous ? previous.answerBn : String(issue.matchedAnswerBn || issue.answerPreview || ""),
+                            previousAnswerEn: previous ? previous.answerEn : String(issue.matchedAnswerEn || ""),
+                            updatedBy: auth.currentUser.uid,
+                            updatedAt: serverTimestamp()
+                        });
+                        transaction.set(historyRef, {
+                            sourceQuestion,
+                            version,
+                            previousAnswerBn: previous ? previous.answerBn : String(issue.matchedAnswerBn || issue.answerPreview || ""),
+                            previousAnswerEn: previous ? previous.answerEn : String(issue.matchedAnswerEn || ""),
+                            answerBn,
+                            answerEn,
+                            issueId: issue.id,
+                            updatedBy: auth.currentUser.uid,
+                            createdAt: serverTimestamp()
+                        });
+                        transaction.update(issueRef, {
+                            status: "resolved",
+                            resolvedBy: auth.currentUser.uid,
+                            resolvedAt: serverTimestamp(),
+                            correctionVersion: version,
+                            correctionId: overrideId
+                        });
+                    });
+                    message.textContent = "Correction published. The next page load will use the approved answer.";
+                    await loadAnswerImprovementQueue();
+                } catch (error) {
+                    console.error("Answer correction publish failed:", error);
+                    alert(error.message || "Could not publish correction. Check Firestore Rules.");
+                    approve.disabled = false; reject.disabled = false;
+                }
+            });
+
+            reject.addEventListener("click", async () => {
+                if (!confirm("Reject this answer issue?")) return;
+                approve.disabled = true; reject.disabled = true;
+                try {
+                    await updateDoc(doc(db, "chatbot_answer_issues", issue.id), {
+                        status: "rejected",
+                        reviewedBy: auth.currentUser.uid,
+                        reviewedAt: serverTimestamp()
+                    });
+                    await logAdminActivity("answer_issue_rejected", "answer_issue", issue.id, String(issue.question || "").slice(0, 180));
+                    await loadAnswerImprovementQueue();
+                } catch (error) {
+                    console.error("Answer issue rejection failed:", error);
+                    alert("Could not reject issue. Check Firestore Rules.");
+                    approve.disabled = false; reject.disabled = false;
+                }
+            });
+
+            actions.append(approve, reject);
+            card.appendChild(actions);
+            list.appendChild(card);
+        });
+
+        if (historyBody) {
+            historyBody.replaceChildren();
+            historySnapshot.docs.forEach(snapshotItem => {
+                const item = snapshotItem.data();
+                const row = document.createElement("tr");
+                const date = item.createdAt && item.createdAt.toDate
+                    ? item.createdAt.toDate().toLocaleString()
+                    : "Date unavailable";
+                [date, `v${item.version || 1}`, item.sourceQuestion || "", item.updatedBy || ""].forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = String(value).slice(0, 300);
+                    cell.style.cssText = "padding:10px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;";
+                    row.appendChild(cell);
+                });
+                historyBody.appendChild(row);
+            });
+        }
+
+        const reportBody = document.getElementById("answer-issue-report-list");
+        if (reportBody) {
+            const grouped = new Map();
+            allIssues.forEach(item => {
+                const question = String(item.sourceQuestion || item.question || "Unknown question");
+                const key = normalizeSuggestedQuestion(question);
+                const current = grouped.get(key) || { question, count: 0, latestStatus: item.status || "unknown" };
+                current.count++;
+                if (item.status === "pending") current.latestStatus = "pending";
+                grouped.set(key, current);
+            });
+            reportBody.replaceChildren();
+            [...grouped.values()].sort((a, b) => b.count - a.count).slice(0, 10).forEach(item => {
+                const row = document.createElement("tr");
+                [String(item.count), item.question, item.latestStatus].forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    cell.style.cssText = "padding:10px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;";
+                    row.appendChild(cell);
+                });
+                reportBody.appendChild(row);
+            });
+            if (!grouped.size) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 3;
+                cell.textContent = "No answer issues have been reported yet.";
+                cell.style.padding = "10px";
+                row.appendChild(cell); reportBody.appendChild(row);
+            }
+        }
+    } catch (error) {
+        console.error("Answer improvement queue load error:", error);
+        message.textContent = "Could not load answer issues. Check Firestore Rules and admin access.";
+    }
+}
+
+
+async function loadQuestionSuggestions() {
+    const message = document.getElementById("question-suggestions-message");
+    const list = document.getElementById("question-suggestions-list");
+    if (!message || !list) return;
+
+    try {
+        const [pendingSnapshot, approvedSnapshot] = await Promise.all([
+            getDocs(query(collection(db, "question_suggestions"), where("status", "==", "pending"))),
+            getDocs(collection(db, "community_question_bank"))
+        ]);
+        const pending = pendingSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const approved = approvedSnapshot.docs.map(item => item.data());
+        const staticQuestions = Array.isArray(window.dengueQuestionIndex)
+            ? window.dengueQuestionIndex.map(item => normalizeSuggestedQuestion(item.question))
+            : [];
+        const approvedQuestions = approved.map(item => normalizeSuggestedQuestion(item.question));
+        const allKnown = new Set([...staticQuestions, ...approvedQuestions]);
+
+        pending.sort((a, b) => {
+            const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+            const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+            return bt - at;
+        });
+
+        // Compare against built-in questions, approved community questions,
+        // and other pending submissions (excluding the current suggestion).
+        const semanticCandidates = [
+            ...(Array.isArray(window.dengueQuestionIndex) ? window.dengueQuestionIndex : []),
+            ...approved.map(item => ({
+                question: item.question,
+                topic: item.topic,
+                id: item.sourceSuggestionId || "approved"
+            })),
+            ...pending.map(item => ({
+                question: item.question,
+                topic: item.topic || "pending",
+                id: item.id,
+                pendingSuggestion: true
+            }))
+        ];
+
+        document.getElementById("question-suggestions-total").textContent = pending.length;
+        list.replaceChildren();
+
+        if (!pending.length) {
+            message.textContent = "No pending question suggestions.";
+            return;
+        }
+        message.textContent = `Review ${pending.length} pending suggestion(s).`;
+
+        pending.forEach(suggestion => {
+            const card = document.createElement("article");
+            card.style.cssText = "border:1px solid #dbe3ea;border-radius:12px;padding:16px;display:grid;gap:10px;background:#fff;";
+
+            const heading = document.createElement("h3");
+            heading.textContent = suggestion.question || "(empty question)";
+            heading.style.cssText = "font-size:17px;line-height:1.5;";
+            card.appendChild(heading);
+
+            const normalizedQuestion = normalizeSuggestedQuestion(suggestion.question);
+            const exactDuplicate = allKnown.has(normalizedQuestion);
+            if (normalizedQuestion) allKnown.add(normalizedQuestion);
+
+            const comparisonPool = semanticCandidates.filter(item =>
+                item.id !== suggestion.id &&
+                normalizeSuggestedQuestion(item.question) !== normalizedQuestion
+            );
+            const semanticMatches = typeof window.findDengueQuestionDuplicates === "function"
+                ? window.findDengueQuestionDuplicates(suggestion.question, comparisonPool, 5)
+                : [];
+            const strongSemanticMatch = semanticMatches.find(item => item.score >= 0.78);
+            const possibleSemanticMatches = semanticMatches.filter(item =>
+                item.score >= 0.55 && item.score < 0.78
+            );
+            const duplicate = exactDuplicate || Boolean(strongSemanticMatch);
+
+            const duplicateNote = document.createElement("p");
+            if (exactDuplicate) {
+                duplicateNote.textContent = "⚠️ Exact duplicate: this wording already exists. Do not add it again.";
+                duplicateNote.style.color = "#b91c1c";
+            } else if (strongSemanticMatch) {
+                duplicateNote.textContent =
+                    `⚠️ Strong meaning-level duplicate (${strongSemanticMatch.similarityPercent}%). Similar existing question: ${strongSemanticMatch.question}`;
+                duplicateNote.style.color = "#b91c1c";
+            } else if (possibleSemanticMatches.length) {
+                duplicateNote.textContent =
+                    `⚠️ Possible related question(s) found (${possibleSemanticMatches[0].similarityPercent}% top match). Please review the meaning manually.`;
+                duplicateNote.style.color = "#b45309";
+            } else {
+                duplicateNote.textContent = "No strong semantic duplicate found in the built-in, approved or pending question bank.";
+                duplicateNote.style.color = "#475569";
+            }
+            card.appendChild(duplicateNote);
+
+            if (semanticMatches.length) {
+                const matchList = document.createElement("ul");
+                matchList.style.cssText = "margin:0;padding-left:22px;color:#475569;font-size:13px;line-height:1.6;";
+                semanticMatches.slice(0, 3).forEach(match => {
+                    const item = document.createElement("li");
+                    item.textContent = `${match.similarityPercent}% meaning similarity — ${match.question}`;
+                    matchList.appendChild(item);
+                });
+                card.appendChild(matchList);
+            }
+
+            const topicLabel = document.createElement("label");
+            topicLabel.textContent = "Topic";
+            const topicSelect = document.createElement("select");
+            topicSelect.style.cssText = "padding:10px;border:1px solid #cbd5e1;border-radius:7px;";
+            [
+                ["symptoms","Symptoms"],["prevention","Prevention"],["tests","Tests & reports"],
+                ["platelets","Platelets"],["food","Food & nutrition"],["medicine","Medicine safety"],
+                ["recovery","Recovery"],["warning","Warning signs"],["transmission","Transmission"],
+                ["general","General"]
+            ].forEach(([value,label]) => {
+                const option = document.createElement("option");
+                option.value = value; option.textContent = label;
+                topicSelect.appendChild(option);
+            });
+            topicSelect.value = ["symptoms","prevention","tests","platelets","food","medicine","recovery","warning","transmission","general"].includes(suggestion.topic)
+                ? suggestion.topic : "general";
+            topicLabel.appendChild(topicSelect);
+            card.appendChild(topicLabel);
+
+            const bnLabel = document.createElement("label");
+            bnLabel.textContent = "Medically reviewed answer — Bangla";
+            const bnAnswer = document.createElement("textarea");
+            bnAnswer.rows = 4; bnAnswer.maxLength = 3000;
+            bnAnswer.placeholder = "বাংলায় যাচাইকৃত উত্তর লিখুন...";
+            bnAnswer.style.cssText = "width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;";
+            bnLabel.appendChild(bnAnswer);
+            card.appendChild(bnLabel);
+
+            const enLabel = document.createElement("label");
+            enLabel.textContent = "Medically reviewed answer — English";
+            const enAnswer = document.createElement("textarea");
+            enAnswer.rows = 4; enAnswer.maxLength = 3000;
+            enAnswer.placeholder = "Write the reviewed English answer...";
+            enAnswer.style.cssText = "width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;";
+            enLabel.appendChild(enAnswer);
+            card.appendChild(enLabel);
+
+            const actions = document.createElement("div");
+            actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;";
+            const approve = document.createElement("button");
+            approve.type = "button"; approve.textContent = "Approve & Add to Question Bank";
+            approve.style.cssText = "padding:10px 14px;background:#087f8c;color:#fff;border:0;border-radius:7px;cursor:pointer;";
+            approve.disabled = duplicate;
+            const reject = document.createElement("button");
+            reject.type = "button"; reject.textContent = "Reject";
+            reject.style.cssText = "padding:10px 14px;background:#fff;color:#b91c1c;border:1px solid #fecaca;border-radius:7px;cursor:pointer;";
+
+            approve.addEventListener("click", async () => {
+                const answerBn = bnAnswer.value.trim();
+                const answerEn = enAnswer.value.trim();
+                if (duplicate) {
+                    alert("This question appears to be an exact duplicate. Review the existing entry instead.");
+                    return;
+                }
+                if (answerBn.length < 20 || answerEn.length < 20) {
+                    alert("Please provide complete Bangla and English answers (at least 20 characters each).");
+                    return;
+                }
+                if (typeof window.assessMedicalAnswer === "function") {
+                    const audit = window.assessMedicalAnswer({ topic: topicSelect.value, question: suggestion.question, answerBn, answerEn });
+                    if (audit.warnings.length) {
+                        alert(`Medical safety audit requires clinician review before publishing:\n\n${audit.warnings.join("\n")}`);
+                        return;
+                    }
+                }
+                if (!confirm("Approve this question and publish the reviewed answers to the live chatbot question bank?")) return;
+
+                approve.disabled = true; reject.disabled = true;
+                try {
+                    const suggestionRef = doc(db, "question_suggestions", suggestion.id);
+                    const bankRef = doc(db, "community_question_bank", suggestion.id);
+                    await runTransaction(db, async transaction => {
+                        const suggestionSnap = await transaction.get(suggestionRef);
+                        const bankSnap = await transaction.get(bankRef);
+                        if (!suggestionSnap.exists() || suggestionSnap.data().status !== "pending") {
+                            throw new Error("This suggestion is no longer pending.");
+                        }
+                        if (bankSnap.exists()) throw new Error("This suggestion has already been published.");
+                        transaction.set(bankRef, {
+                            question: suggestion.question,
+                            normalizedQuestion: normalizeSuggestedQuestion(suggestion.question),
+                            topic: topicSelect.value,
+                            answerBn,
+                            answerEn,
+                            status: "approved",
+                            sourceSuggestionId: suggestion.id,
+                            reviewedBy: auth.currentUser.uid,
+                            reviewedAt: new Date().toISOString(),
+                            createdAt: serverTimestamp()
+                        });
+                        transaction.update(suggestionRef, {
+                            status: "approved",
+                            reviewedBy: auth.currentUser.uid,
+                            reviewedAt: serverTimestamp()
+                        });
+                    });
+                    document.getElementById("question-suggestions-approved").textContent =
+                        Number(document.getElementById("question-suggestions-approved").textContent || 0) + 1;
+                    message.textContent = "Question approved and added to the community question bank.";
+                    await loadQuestionSuggestions();
+                } catch (error) {
+                    console.error("Question approval failed:", error);
+                    alert(error.message || "Could not approve this suggestion. Check Firestore Rules.");
+                    approve.disabled = duplicate;
+                    reject.disabled = false;
+                }
+            });
+
+            reject.addEventListener("click", async () => {
+                if (!confirm("Reject this question suggestion?")) return;
+                approve.disabled = true; reject.disabled = true;
+                try {
+                    await updateDoc(doc(db, "question_suggestions", suggestion.id), {
+                        status: "rejected",
+                        reviewedBy: auth.currentUser.uid,
+                        reviewedAt: serverTimestamp()
+                    });
+                    document.getElementById("question-suggestions-rejected").textContent =
+                        Number(document.getElementById("question-suggestions-rejected").textContent || 0) + 1;
+                    await loadQuestionSuggestions();
+                } catch (error) {
+                    console.error("Question rejection failed:", error);
+                    alert("Could not reject this suggestion. Check Firestore Rules.");
+                    approve.disabled = duplicate;
+                    reject.disabled = false;
+                }
+            });
+
+            actions.append(approve, reject);
+            card.appendChild(actions);
+            list.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Question suggestions load error:", error);
+        message.textContent = "Could not load suggestions. Check Firestore Rules and admin permissions.";
+    }
+}
+
+
+function analyticsDate(value) {
+    if (value && typeof value.toDate === "function") return value.toDate();
+    if (value instanceof Date) return value;
+    if (typeof value === "string") {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+}
+
+function analyticsNormalize(value) {
+    return String(value || "").toLocaleLowerCase().normalize("NFKC")
+        .replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString())
+        .replace(/[.,!?;:।"'“”‘’(){}\[\]\-_/\\]/g, " ")
+        .replace(/\s+/g, " ").trim();
+}
+
+function analyticsCell(value) {
+    const cell = document.createElement("td");
+    cell.textContent = String(value ?? "");
+    cell.style.cssText = "padding:9px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;vertical-align:top;";
+    return cell;
+}
+
+async function loadChatbotPerformanceAnalytics() {
+    const message = document.getElementById("chatbot-analytics-message");
+    if (!message) return;
+
+    try {
+        const [querySnapshot, feedbackSnapshot] = await Promise.all([
+            getDocs(query(collection(db, "chatbot_query_events"), orderBy("createdAt", "desc"), limit(2000))),
+            getDocs(query(collection(db, "chatbot_feedback"), orderBy("createdAt", "desc"), limit(2000)))
+        ]);
+
+        const now = new Date();
+        const start30 = new Date(now);
+        start30.setDate(start30.getDate() - 29);
+        start30.setHours(0, 0, 0, 0);
+        const start7 = new Date(now);
+        start7.setDate(start7.getDate() - 6);
+        start7.setHours(0, 0, 0, 0);
+
+        const allQueries = querySnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const allFeedback = feedbackSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const queries30 = allQueries.filter(item => {
+            const date = analyticsDate(item.createdAt) || analyticsDate(item.createdAtClient);
+            return date && date >= start30 && date <= now;
+        });
+        const queries7 = queries30.filter(item => {
+            const date = analyticsDate(item.createdAt) || analyticsDate(item.createdAtClient);
+            return date && date >= start7;
+        });
+        const feedback30 = allFeedback.filter(item => {
+            const date = analyticsDate(item.createdAt) || analyticsDate(item.createdAtClient);
+            return date && date >= start30 && date <= now;
+        });
+
+        const scores = queries30.map(item => Number(item.matchScore))
+            .filter(value => Number.isFinite(value) && value >= 0 && value <= 100);
+        const avgMatch = scores.length
+            ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length)
+            : null;
+        const helpful = feedback30.filter(item => item.rating === "helpful").length;
+        const notHelpful = feedback30.filter(item => item.rating === "not_helpful").length;
+        const totalRated = helpful + notHelpful;
+        const helpfulRate = totalRated ? Math.round((helpful / totalRated) * 100) : null;
+        const unansweredQueries = queries30.filter(item =>
+            item.isUnmatched === true || !String(item.matchedQuestion || "").trim()
+        );
+        const poorMatchQueries = queries30.filter(item => {
+            const score = Number(item.matchScore);
+            return Number.isFinite(score) && score > 0 && score < 55 &&
+                String(item.matchedQuestion || "").trim().length > 0;
+        });
+
+        document.getElementById("analytics-questions-30d").textContent = queries30.length;
+        document.getElementById("analytics-questions-7d").textContent = queries7.length;
+        document.getElementById("analytics-average-match").textContent = avgMatch === null ? "—" : `${avgMatch}%`;
+        document.getElementById("analytics-helpful-rate").textContent = helpfulRate === null ? "—" : `${helpfulRate}%`;
+        document.getElementById("analytics-unanswered-total").textContent = unansweredQueries.length;
+        document.getElementById("analytics-poor-match-total").textContent = poorMatchQueries.length;
+        document.getElementById("analytics-ratings-total").textContent = totalRated;
+
+        const dayBuckets = [];
+        for (let offset = 6; offset >= 0; offset--) {
+            const date = new Date(now);
+            date.setDate(date.getDate() - offset);
+            date.setHours(0, 0, 0, 0);
+            const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            const count = queries7.filter(item => {
+                const d = analyticsDate(item.createdAt) || analyticsDate(item.createdAtClient);
+                return d && `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` === key;
+            }).length;
+            dayBuckets.push({ date, count });
+        }
+        const chart = document.getElementById("analytics-daily-chart");
+        chart.replaceChildren();
+        const maxCount = Math.max(1, ...dayBuckets.map(item => item.count));
+        dayBuckets.forEach(bucket => {
+            const column = document.createElement("div");
+            column.style.cssText = "display:flex;flex-direction:column;justify-content:end;align-items:center;gap:6px;min-width:0;height:145px;";
+            const count = document.createElement("strong");
+            count.textContent = bucket.count;
+            count.style.fontSize = "12px";
+            const bar = document.createElement("div");
+            bar.style.cssText = `width:min(100%,30px);height:${Math.max(3, (bucket.count / maxCount) * 95)}px;background:#087f8c;border-radius:5px 5px 0 0;`;
+            bar.title = `${bucket.date.toLocaleDateString()}: ${bucket.count}`;
+            const label = document.createElement("small");
+            label.textContent = bucket.date.toLocaleDateString(undefined, { weekday: "short" });
+            label.style.fontSize = "10px";
+            column.append(count, bar, label);
+            chart.appendChild(column);
+        });
+
+        const questionGroups = new Map();
+        queries30.forEach(item => {
+            const question = String(item.question || "").trim();
+            const key = analyticsNormalize(question);
+            if (!key) return;
+            const group = questionGroups.get(key) || { question, count: 0 };
+            group.count++;
+            questionGroups.set(key, group);
+        });
+        const topBody = document.getElementById("analytics-top-questions");
+        topBody.replaceChildren();
+        [...questionGroups.values()].sort((a, b) => b.count - a.count).slice(0, 50).forEach(item => {
+            const row = document.createElement("tr");
+            row.append(analyticsCell(item.count), analyticsCell(item.question));
+            topBody.appendChild(row);
+        });
+        if (!questionGroups.size) {
+            const row = document.createElement("tr");
+            const cell = analyticsCell("No question events yet.");
+            cell.colSpan = 2; row.appendChild(cell); topBody.appendChild(row);
+        }
+
+        const topicGroups = new Map();
+        queries30.forEach(item => {
+            const topic = String(item.topic || "Unmatched");
+            const group = topicGroups.get(topic) || { topic, count: 0, totalScore: 0, scoreCount: 0, lowCount: 0, helpful: 0, rated: 0 };
+            group.count++;
+            const score = Number(item.matchScore);
+            if (Number.isFinite(score)) { group.totalScore += score; group.scoreCount++; }
+            if (item.isUnmatched === true || item.matchLevel === "low" || (Number.isFinite(score) && score > 0 && score < 55)) group.lowCount++;
+            topicGroups.set(topic, group);
+        });
+        feedback30.forEach(item => {
+            const topic = String(item.intent || "Unmatched");
+            const group = topicGroups.get(topic);
+            if (!group) return;
+            group.rated++;
+            if (item.rating === "helpful") group.helpful++;
+        });
+        const topicBody = document.getElementById("analytics-topic-performance");
+        topicBody.replaceChildren();
+        [...topicGroups.values()].sort((a, b) => b.count - a.count).forEach(item => {
+            const row = document.createElement("tr");
+            row.append(
+                analyticsCell(item.topic),
+                analyticsCell(item.count),
+                analyticsCell(item.scoreCount ? `${Math.round(item.totalScore / item.scoreCount)}%` : "—"),
+                analyticsCell(`${Math.round((item.lowCount / Math.max(item.count, 1)) * 100)}%`),
+                analyticsCell(item.rated ? `${Math.round((item.helpful / item.rated) * 100)}% (${item.rated})` : "—")
+            );
+            topicBody.appendChild(row);
+        });
+        if (!topicGroups.size) {
+            const row = document.createElement("tr");
+            const cell = analyticsCell("No topic data yet.");
+            cell.colSpan = 5; row.appendChild(cell); topicBody.appendChild(row);
+        }
+
+        const renderQuestionReport = (containerId, records, includeScore = false) => {
+            const body = document.getElementById(containerId);
+            if (!body) return;
+            body.replaceChildren();
+            const groups = new Map();
+            records.forEach(item => {
+                const question = String(item.question || "").trim();
+                const key = analyticsNormalize(question);
+                if (!key) return;
+                const group = groups.get(key) || { question, count: 0, totalScore: 0, scoreCount: 0 };
+                group.count++;
+                const score = Number(item.matchScore);
+                if (Number.isFinite(score)) { group.totalScore += score; group.scoreCount++; }
+                groups.set(key, group);
+            });
+            const rows = [...groups.values()].sort((a, b) => b.count - a.count).slice(0, 30);
+            rows.forEach(item => {
+                const row = document.createElement("tr");
+                if (includeScore) row.appendChild(analyticsCell(item.scoreCount ? `${Math.round(item.totalScore / item.scoreCount)}%` : "—"));
+                row.append(analyticsCell(item.count), analyticsCell(item.question));
+                body.appendChild(row);
+            });
+            if (!rows.length) {
+                const row = document.createElement("tr");
+                const cell = analyticsCell("No records in the selected period.");
+                cell.colSpan = includeScore ? 3 : 2;
+                row.appendChild(cell);
+                body.appendChild(row);
+            }
+        };
+        renderQuestionReport("analytics-unanswered-list", unansweredQueries);
+        renderQuestionReport("analytics-poor-match-list", poorMatchQueries, true);
+
+        const reasonGroups = new Map();
+        feedback30.filter(item => item.rating === "not_helpful").forEach(item => {
+            const reason = String(item.feedbackReason || "not_specified");
+            reasonGroups.set(reason, (reasonGroups.get(reason) || 0) + 1);
+        });
+        const reasonBody = document.getElementById("analytics-feedback-reasons");
+        reasonBody.replaceChildren();
+        [...reasonGroups.entries()].sort((a, b) => b[1] - a[1]).forEach(([reason, count]) => {
+            const row = document.createElement("tr");
+            row.append(analyticsCell(reason.replace(/_/g, " ")), analyticsCell(count));
+            reasonBody.appendChild(row);
+        });
+        if (!reasonGroups.size) {
+            const row = document.createElement("tr");
+            const cell = analyticsCell("No Not Helpful reasons recorded.");
+            cell.colSpan = 2; row.appendChild(cell); reasonBody.appendChild(row);
+        }
+
+        const exportButton = document.getElementById("analytics-export");
+        if (exportButton) exportButton.onclick = () => {
+            const rows = [
+                ["record_type", "question_or_topic", "count", "average_match", "rating", "reason"],
+                ...[...questionGroups.values()].map(item => ["popular_question", item.question, item.count, "", "", ""]),
+                ...[...topicGroups.values()].map(item => ["topic", item.topic, item.count, item.scoreCount ? Math.round(item.totalScore / item.scoreCount) : "", "", ""]),
+                ...[...reasonGroups.entries()].map(([reason, count]) => ["feedback_reason", "", count, "", "", reason])
+            ];
+            const quote = value => `"${String(value ?? "").replace(/"/g, '""')}"`;
+            const csv = rows.map(row => row.map(quote).join(",")).join("\r\n");
+            const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `chatbot-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+            logAdminActivity("analytics_exported", "analytics", "last_30_days", "Exported aggregated chatbot analytics CSV.");
+        };
+
+        const badGroups = new Map();
+        feedback30.filter(item => item.rating === "not_helpful").forEach(item => {
+            const question = String(item.matchedQuestion || item.question || "").trim();
+            const key = analyticsNormalize(question);
+            if (!key) return;
+            const group = badGroups.get(key) || { question, count: 0 };
+            group.count++;
+            badGroups.set(key, group);
+        });
+        const badBody = document.getElementById("analytics-not-helpful-questions");
+        badBody.replaceChildren();
+        [...badGroups.values()].sort((a, b) => b.count - a.count).slice(0, 20).forEach(item => {
+            const row = document.createElement("tr");
+            row.append(analyticsCell(item.count), analyticsCell(item.question));
+            badBody.appendChild(row);
+        });
+        if (!badGroups.size) {
+            const row = document.createElement("tr");
+            const cell = analyticsCell("No Not Helpful reports in the last 30 days.");
+            cell.colSpan = 2; row.appendChild(cell); badBody.appendChild(row);
+        }
+
+        message.textContent = `Analytics based on ${queries30.length} questions and ${feedback30.length} ratings from the last 30 days. Data is limited to the latest 2,000 records per collection.`;
+    } catch (error) {
+        console.error("Chatbot performance analytics load error:", error);
+        message.textContent = "Could not load analytics. Check Firestore Rules and admin access.";
+    }
+}
+
+
+async function loadChatbotFeedback() {
+    const message = document.getElementById("chatbot-feedback-message");
+    const list = document.getElementById("chatbot-feedback-list");
+    if (!message || !list) return;
+
+    try {
+        const feedbackQuery = query(
+            collection(db, "chatbot_feedback"),
+            orderBy("createdAt", "desc"),
+            limit(50)
+        );
+        const snapshot = await getDocs(feedbackQuery);
+        const records = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+
+        const helpful = records.filter(item => item.rating === "helpful").length;
+        const unhelpful = records.filter(item => item.rating === "not_helpful").length;
+        const scores = records.map(item => Number(item.matchScore))
+            .filter(score => Number.isFinite(score));
+        const average = scores.length
+            ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+            : null;
+
+        document.getElementById("chatbot-feedback-total").textContent = records.length;
+        document.getElementById("chatbot-feedback-helpful").textContent = helpful;
+        document.getElementById("chatbot-feedback-unhelpful").textContent = unhelpful;
+        document.getElementById("chatbot-feedback-score").textContent =
+            average === null ? "—" : `${average}%`;
+
+        list.replaceChildren();
+        records.forEach(record => {
+            const row = document.createElement("tr");
+            row.style.borderBottom = "1px solid #e2e8f0";
+            const rawDate = record.createdAt && record.createdAt.toDate
+                ? record.createdAt.toDate()
+                : (record.createdAtClient ? new Date(record.createdAtClient) : null);
+            const dateText = rawDate && !Number.isNaN(rawDate.getTime())
+                ? rawDate.toLocaleString()
+                : "Date unavailable";
+            const values = [
+                dateText,
+                record.rating === "helpful" ? "👍 Helpful" : "👎 Not helpful",
+                record.intent || "Unmatched",
+                Number.isFinite(Number(record.matchScore)) ? `${record.matchScore}%` : "—",
+                record.question || "",
+                record.answerPreview || "",
+                record.feedbackReason || "—",
+                record.feedbackComment || ""
+            ];
+            values.forEach(value => {
+                const cell = document.createElement("td");
+                cell.style.padding = "10px";
+                cell.style.verticalAlign = "top";
+                cell.style.maxWidth = "260px";
+                cell.style.whiteSpace = "pre-wrap";
+                cell.textContent = String(value).slice(0, 500);
+                row.appendChild(cell);
+            });
+            list.appendChild(row);
+        });
+
+        message.textContent = records.length
+            ? `Showing the latest ${records.length} feedback records.`
+            : "No chatbot feedback has been submitted yet.";
+    } catch (error) {
+        console.error("Chatbot feedback load error:", error);
+        message.textContent =
+            "Could not load feedback. Check the chatbot_feedback Firestore rules and admin permissions.";
+    }
+}
+
 
 let appointmentNotificationsUnsubscribe = null;
 
@@ -542,6 +3414,7 @@ async function loadAdminAppointments() {
                         doc(db, "appointments", appointmentDoc.id),
                         { status: select.value }
                     );
+                    await logAdminActivity("appointment_status_updated", "appointment", appointmentDoc.id, `Appointment status changed to ${select.value}.`);
                     message.textContent = "Appointment status updated.";
                 } catch (error) {
                     console.error("Appointment update error:", error);
@@ -667,6 +3540,7 @@ const values = [
                         doc(db, "doctor_applications", docSnap.id),
                         { status: statusSelect.value }
                     );
+                    await logAdminActivity("doctor_application_status_updated", "doctor_application", docSnap.id, `Doctor application status changed to ${statusSelect.value}.`);
 
                     message.textContent = "Doctor status updated successfully!";
                     message.style.color = "green";
@@ -715,8 +3589,20 @@ const values = [
 
                 document.querySelector(".welcome h2").textContent =
                     "Welcome, " + (userSnap.data().name || "Admin") + "!";
+await logAdminActivity("admin_session_started", "session", user.uid, "Admin dashboard session verified.");
 await loadDashboardStats();
+setupKnowledgeManagement();
+setupAdminAuditAndHealth();
+await loadAdminActivityLog();
+await runAdminSystemHealthCheck();
+document.getElementById("analytics-refresh")?.addEventListener("click", loadChatbotPerformanceAnalytics);
+await loadChatbotPerformanceAnalytics();
+await loadChatbotFeedback();
+await loadAnswerImprovementQueue();
+await loadQuestionSuggestions();
 await loadDoctorApplications();
+setupBatch2AdminControls();
+await Promise.all([loadMedicalSourceRegistryAdmin(), loadClinicalReviewQueue(), loadChatbotDoctorVerification()]);
 await loadAdminAppointments();
 startAppointmentNotifications();
             } catch (error) {
@@ -825,10 +3711,25 @@ await setDoc(profileRef, {
     createdAt: serverTimestamp()
 });
 
+// Publish an approved directory profile, but keep chatbot recommendation disabled
+// until an Admin separately checks the doctor's BMDC registration.
+await setDoc(doc(db, "public_doctors", uid), {
+    doctorUid: uid,
+    name: doctor.name || "",
+    email,
+    phone: doctor.phone || "",
+    qualification: doctor.qualification || "",
+    hospital: doctor.hospital || "",
+    status: "approved",
+    chatbotVerified: false,
+    createdAt: serverTimestamp()
+}, { merge: true });
+
 await updateDoc(
     doc(db, "doctor_applications", applicationDoc.id),
     { doctorUid: uid }
 );
+await logAdminActivity("doctor_profile_created", "public_doctor", uid, `Created unverified chatbot profile for ${doctor.name || email}.`);
 
 
         message.textContent =
@@ -859,5 +3760,9 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 });
  
     </script>
+    <script type="module" src="../../assets/js/admin-operations.js"></script>
+    <script src="../../assets/js/pwa-register.js"></script>
+    <link rel="manifest" href="../../manifest.webmanifest">
+    <meta name="theme-color" content="#087f8c">
 </body>
 </html>

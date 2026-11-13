@@ -3,7 +3,7 @@
 // DOCTOR LIST
 // =====================================
 import { initializeApp, getApps, getApp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
     getFirestore,
@@ -11,7 +11,7 @@ import {
     getDocs,
     query,
     where
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAnup3vd_NSkSKrhHtuZdQDJ0kuBZAci9o",
@@ -25,108 +25,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const doctors = [
-    {
-        id: 1,
-        name: "Dr. Doctor One",
-        specialization: "Medicine Specialist",
-        hospital: "Rajshahi Medical College Hospital",
-        address: "Rajshahi, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Rajshahi+Medical+College+Hospital"
-    },
-    {
-        id: 2,
-        name: "Dr. Doctor Two",
-        specialization: "Medicine Specialist",
-        hospital: "Dhaka Medical College Hospital",
-        address: "Dhaka, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Dhaka+Medical+College+Hospital"
-    },
-    {
-        id: 3,
-        name: "Dr. Doctor Three",
-        specialization: "Medicine Specialist",
-        hospital: "Chittagong Medical College Hospital",
-        address: "Chattogram, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Chittagong+Medical+College+Hospital"
-    },
-    {
-        id: 4,
-        name: "Dr. Doctor Four",
-        specialization: "Medicine Specialist",
-        hospital: "Mymensingh Medical College Hospital",
-        address: "Mymensingh, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Mymensingh+Medical+College+Hospital"
-    },
-    {
-        id: 5,
-        name: "Dr. Doctor Five",
-        specialization: "Medicine Specialist",
-        hospital: "Sylhet MAG Osmani Medical College Hospital",
-        address: "Sylhet, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Sylhet+MAG+Osmani+Medical+College+Hospital"
-    },
-    {
-        id: 6,
-        name: "Dr. Doctor Six",
-        specialization: "Medicine Specialist",
-        hospital: "Rangpur Medical College Hospital",
-        address: "Rangpur, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Rangpur+Medical+College+Hospital"
-    },
-    {
-        id: 7,
-        name: "Dr. Doctor Seven",
-        specialization: "Medicine Specialist",
-        hospital: "Khulna Medical College Hospital",
-        address: "Khulna, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Khulna+Medical+College+Hospital"
-    },
-    {
-        id: 8,
-        name: "Dr. Doctor Eight",
-        specialization: "Medicine Specialist",
-        hospital: "Rajshahi Medical College Hospital",
-        address: "Rajshahi, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Rajshahi+Medical+College+Hospital"
-    },
-    {
-        id: 9,
-        name: "Dr. Doctor Nine",
-        specialization: "Medicine Specialist",
-        hospital: "Cumilla Medical College Hospital",
-        address: "Cumilla, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Cumilla+Medical+College+Hospital"
-    },
-    {
-        id: 10,
-        name: "Dr. Doctor Ten",
-        specialization: "Medicine Specialist",
-        hospital: "Sher-e-Bangla Medical College Hospital",
-        address: "Barishal, Bangladesh",
-        phone: "Contact hospital",
-        availableTime: "Please confirm with hospital",
-        mapLink: "https://www.google.com/maps/search/?api=1&query=Sher-e-Bangla+Medical+College+Hospital"
-    }
-];
+const doctors = [];
 
 console.log("Doctor list loaded successfully!");
 console.log("Total doctors:", doctors.length);
@@ -209,6 +108,7 @@ function bookAppointment(doctorId) {
 
 window.bookAppointment = bookAppointment;
 window.doctors = doctors;
+window.chatbotVerifiedDoctors = [];
 
 document.addEventListener("DOMContentLoaded", function () {
     const dateInput = document.getElementById("appointment-date");
@@ -270,7 +170,8 @@ function appendApprovedDoctorCard(doctor) {
         ["Hospital", doctor.hospital],
         ["Address", doctor.address],
         ["Contact", doctor.phone],
-        ["Available", doctor.availableTime]
+        ["Weekly availability", doctor.availableTime],
+        ["BMDC verification", doctor.chatbotVerified ? "Verified by Admin" : "Not yet verified by Admin"]
     ];
 
     details.forEach(function (item) {
@@ -336,10 +237,12 @@ const snapshot = await getDocs(
 
         snapshot.forEach(function (docSnap) {
             const data = docSnap.data();
+            if (String(data.status || "").toLowerCase() !== "approved") return;
             const email = (data.email || "").trim().toLowerCase();
+            const schedule = data.schedule || {};
 
-            // Avoid adding the same doctor twice
-if (existingEmails.has(docSnap.id)) {
+            // Avoid adding the same approved doctor twice.
+if (email && existingEmails.has(email)) {
     return;
 }
 const doctor = {
@@ -354,7 +257,11 @@ const doctor = {
                     data.hospital || "Hospital information unavailable",
                 address: data.address || data.hospital || "Bangladesh",
                 phone: data.phone || "Contact hospital",
-                availableTime: "Please confirm with hospital",
+                availableTime: schedule.days
+                    ? `${schedule.days} · ${schedule.startTime || "time not set"}–${schedule.endTime || "time not set"} (confirm before visiting)`
+                    : "Please confirm with hospital",
+                schedule,
+                chatbotVerified: data.chatbotVerified === true,
                 mapLink:
                     "https://www.google.com/maps/search/?api=1&query=" +
                     encodeURIComponent(
@@ -363,7 +270,17 @@ const doctor = {
             };
 
             doctors.push(doctor);
-            existingEmails.add(docSnap.id);
+            if (email) existingEmails.add(email);
+
+            // Chatbot recommendations require explicit Admin verification and a BMDC number.
+            if (data.status === "approved" && data.chatbotVerified === true &&
+                String(data.bmdcRegistrationNumber || "").trim()) {
+                window.chatbotVerifiedDoctors.push({
+                    ...doctor,
+                    bmdcRegistrationNumber: String(data.bmdcRegistrationNumber).trim(),
+                    chatbotVerified: true
+                });
+            }
 
             appendApprovedDoctorCard(doctor);
         });

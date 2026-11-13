@@ -8,8 +8,39 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-},
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "audit:question-bank": "node scripts/audit-question-bank.js",
+    "test:hybrid-search": "node scripts/test-hybrid-search.js",
+    "test:top15": "node scripts/test-top15-ranking.js",
+    "test:top15-answer": "node scripts/test-top15-answer-flow.js",
+    "test:body-pain": "node scripts/test-body-pain-intent.js",
+    "test:body-pain-intents": "node scripts/test-body-pain-intents.js",
+    "test:symptom-intents": "node scripts/test-symptom-intents.js",
+    "test:platelet-reports": "node scripts/test-platelet-reports.js",
+    "test:food-nutrition": "node scripts/test-food-nutrition-intents.js",
+    "test:medicine-safety": "node scripts/test-medicine-safety-intents.js",
+    "test:emergency": "node scripts/test-emergency-intents.js",
+    "test:recovery-prevention": "node scripts/test-recovery-prevention-intents.js",
+    "test:task10-integration": "node scripts/test-task10-integration.js",
+    "test:full": "node scripts/test-full-chatbot.js",
+    "test:task11": "node scripts/test-task11-production-upgrade.js",
+    "test:task12": "node scripts/test-task12-community-question-bank.js",
+    "test:task13": "node scripts/test-task13-semantic-duplicates.js",
+    "test:task14": "node scripts/test-task14-answer-improvement.js",
+    "test:task15": "node scripts/test-task15-chatbot-analytics.js",
+    "test:task16": "node scripts/test-task16-knowledge-management.js",
+    "test:task17": "node scripts/test-task17-bulk-import.js",
+    "test:task18-28": "node scripts/test-task18-28-batch1.js",
+    "test:task29-39": "node scripts/test-task29-39-batch2.js",
+    "test:task40-53": "node scripts/test-task40-53-batch3.js",
+    "audit:release": "node scripts/audit-release.js",
+    "test:task54-58": "node scripts/test-task54-58-batch4.js",
+    "test:task59-62": "node scripts/test-task59-62-batch5.js",
+    "test:task63-67": "node scripts/test-task63-67-batch6.js",
+    "test:task68-72": "node scripts/test-task68-72-batch7.js",
+    "test:task73-92": "node scripts/test-task73-92.js",
+    "test:chatbot-ui": "node scripts/test-chatbot-ui-layout.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,7 +48,6 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.10",
-    "express": "^5.3.0",
-    "openai": "^7.53.0"
+    "express": "^5.3.0"
   }
 }

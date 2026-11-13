@@ -1199,3 +1199,80 @@ footer *{
         height: 320px;
     }
 }
+
+
+/* ===== Task 3: Top 15 Similarity Results ===== */
+.top-matches-wrapper {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 137, 123, 0.22);
+    max-width: 100%;
+}
+.top-matches-toggle {
+    display: inline-block;
+    max-width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #00897b;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #00796b;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+}
+.top-matches-toggle:hover { background: #e0f2f1; }
+.top-matches-list {
+    margin: 9px 0 0;
+    padding-left: 24px;
+    max-height: 210px;
+    overflow-y: auto;
+}
+.top-match-item {
+    padding: 7px 5px 7px 2px;
+    border-bottom: 1px solid #dce9e6;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.top-match-question {
+    display: block;
+    color: #263238;
+    overflow-wrap: anywhere;
+}
+.top-match-meta {
+    display: block;
+    margin-top: 3px;
+    color: #00796b;
+    font-size: 11px;
+    font-weight: 600;
+}
+.top-matches-note {
+    margin: 7px 0 0;
+    color: #657572;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+
+/* ===== Task 8: Emergency response alert ===== */
+.dengue-emergency-alert {
+    display: block;
+    margin: 0 0 12px;
+    padding: 11px 13px;
+    border: 1px solid #c62828;
+    border-left: 5px solid #b71c1c;
+    border-radius: 8px;
+    background: #fff3f2;
+    color: #7f1717;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.dengue-emergency-alert strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 700;
+}
+.dengue-emergency-alert p {
+    margin: 0;
+}

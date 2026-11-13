@@ -8,6 +8,8 @@
 
     <!-- Responsive Website -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#087f8c">
 
     <!-- SEO -->
     <meta name="description" content="Smart Dengue Management System">
@@ -804,17 +806,69 @@ id="appointment-ticket" style="display: none;">
             <h3>🤖 Dengue AI Assistant</h3>
             <button id="chatbot-close" type="button">✖</button>
         </div>
-        <div id="chatbot-messages">
+        <div id="chatbot-messages" aria-live="polite" aria-label="Chat messages">
             <div class="bot-message">
                 আসসালামু আলাইকুম! ডেঙ্গু সম্পর্কে কী জানতে চান?
                 <br>
                 Hello! Ask me anything about dengue.
             </div>
         </div>
-        <form id="chatbot-form">
-            <input type="text" id="chatbot-input" placeholder="আপনার প্রশ্ন লিখুন..." required>
-            <button type="submit">➤</button>
+        <div id="chatbot-starter-questions" class="chatbot-starter-questions" aria-label="Suggested starter questions">
+            <strong>শুরু করতে একটি প্রশ্ন বেছে নিন / Try a question</strong>
+            <div class="chatbot-starter-list">
+                <button type="button" data-starter-question="ডেঙ্গুর সাধারণ লক্ষণ কী?">ডেঙ্গুর লক্ষণ কী?</button>
+                <button type="button" data-starter-question="ডেঙ্গুতে প্লেটলেট কমে কেন?">প্লেটলেট কমে কেন?</button>
+                <button type="button" data-starter-question="কোন লক্ষণে হাসপাতালে যেতে হবে?">কখন হাসপাতালে যাব?</button>
+                <button type="button" data-starter-question="ডেঙ্গু হলে কী খাব?">ডেঙ্গু হলে কী খাব?</button>
+                <button type="button" data-starter-question="What tests are used for dengue?">Dengue tests</button>
+            </div>
+        </div>
+        <details id="chatbot-settings-panel" class="chatbot-settings-panel">
+            <summary>
+                <span class="chatbot-settings-title">⚙️ Chat settings / চ্যাট সেটিংস</span>
+            </summary>
+            <div class="chatbot-settings-content">
+                <div id="chatbot-history-controls" class="chatbot-history-controls">
+                    <label><input type="checkbox" id="chatbot-save-history"> Save chat on this device / এই ডিভাইসে চ্যাট সংরক্ষণ করুন</label>
+                    <div class="chatbot-context-actions">
+                        <button type="button" id="chatbot-clear-context">Start a new topic / নতুন বিষয় শুরু করুন</button>
+                        <button type="button" id="chatbot-clear-history">Clear saved chat</button>
+                    </div>
+                    <small>Off by default. Saved history stays in this browser only; it is not uploaded to the server. Avoid entering names or other identifying details.</small>
+                    <span id="chatbot-history-status" role="status" aria-live="polite"></span>
+                </div>
+                <div class="chatbot-voice-options">
+                    <label for="chatbot-voice-language">Voice input language / ভয়েস ভাষা</label>
+                    <select id="chatbot-voice-language" aria-label="Voice input language">
+                        <option value="auto" selected>Auto detect (Bangla default) / স্বয়ংক্রিয় (বাংলা ডিফল্ট)</option>
+                        <option value="bn-BD">বাংলা</option>
+                        <option value="en-US">English</option>
+                    </select>
+                    <label><input type="checkbox" id="chatbot-auto-speak"> Read answers aloud automatically / উত্তর স্বয়ংক্রিয়ভাবে শুনুন</label>
+                    <small id="chatbot-voice-privacy-note">Voice input uses your browser's speech-recognition service. Depending on your browser/provider settings, audio may be processed by that provider. Avoid speaking names or sensitive medical details; type them instead if privacy is a concern. / ভয়েস ইনপুট ব্রাউজারের Speech Recognition ব্যবহার করে। ব্রাউজার বা সেবাদাতার সেটিংস অনুযায়ী অডিও তাদের সার্ভারে প্রক্রিয়াকৃত হতে পারে। ব্যক্তিগত নাম বা সংবেদনশীল চিকিৎসা-তথ্য বলার বদলে লিখুন।</small>
+                </div>
+                <p id="chatbot-language-status" class="chatbot-voice-status" role="status" aria-live="polite">Language detection is ready / ভাষা শনাক্তকরণ প্রস্তুত</p>
+                <button type="button" id="open-question-suggestion" class="question-suggestion-toggle">
+                    নতুন প্রশ্ন প্রস্তাব করুন / Suggest a question
+                </button>
+                <form id="question-suggestion-form" class="question-suggestion-form" hidden>
+                    <label for="question-suggestion-input">আপনার প্রস্তাবিত ডেঙ্গু প্রশ্ন / Your suggested dengue question</label>
+                    <textarea id="question-suggestion-input" maxlength="300" minlength="8" rows="2" required placeholder="প্রশ্নটি লিখুন... / Type your question..."></textarea>
+                    <p>প্রস্তাবটি Admin যাচাই করবেন। অনুমোদনের আগে এটি Chatbot-এর উত্তর বা Question Bank পরিবর্তন করবে না।</p>
+                    <div class="question-suggestion-actions">
+                        <button type="submit" id="submit-question-suggestion">প্রস্তাব পাঠান / Submit</button>
+                        <button type="button" id="cancel-question-suggestion">বাতিল / Cancel</button>
+                    </div>
+                    <p id="question-suggestion-status" role="status" aria-live="polite"></p>
+                </form>
+            </div>
+        </details>
+        <form id="chatbot-form" aria-label="Send a chatbot question">
+            <input type="text" id="chatbot-input" placeholder="আপনার প্রশ্ন লিখুন..." required maxlength="300" autocomplete="off">
+            <button type="button" id="chatbot-voice-button" aria-label="Speak your question" title="Speak your question">🎙️</button>
+            <button type="submit" aria-label="Send question">➤</button>
         </form>
+        <p id="chatbot-voice-status" class="chatbot-voice-status" role="status" aria-live="polite"></p>
     </div>
 </div>
 <!-- End Dengue AI Chatbot -->
@@ -822,7 +876,16 @@ id="appointment-ticket" style="display: none;">
 <!-- Project JavaScript -->
 <script type="module" src="assets/js/doctors.js"></script>
 <script src="assets/js/dengue-questions.js"></script>
+<script src="assets/js/dengue-search.js"></script>
+<script src="assets/js/community-question-bank.js"></script>
+<script src="assets/js/chatbot-intelligence.js"></script>
+<script src="assets/js/medical-safety.js"></script>
+<script src="assets/js/dengue-ai-clinical.js"></script>
+<script src="assets/js/medical-references.js"></script>
+<script src="assets/js/chatbot-quality.js"></script>
+<script src="assets/js/answer-overrides.js"></script>
 <script type="module" src="assets/js/script.js"></script>
 
+<script src="/assets/js/pwa-register.js"></script>
 </body>
 </html>

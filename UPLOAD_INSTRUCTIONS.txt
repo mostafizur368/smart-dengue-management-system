@@ -1,23 +1,165 @@
-SMART DENGUE MANAGEMENT SYSTEM - READY PACKAGE
+SMART DENGUE MANAGEMENT SYSTEM - FREE CHATBOT PACKAGE
 
 Upload the CONTENTS of this folder to the ROOT of your GitHub repository.
 Do not upload this folder as a nested folder.
 
 Excluded intentionally:
-- .env (contains private secrets; add OPENAI_API_KEY in Render Environment Variables)
-- node_modules (Render installs dependencies from package.json)
-- New Text Document.txt (empty accidental file)
+- .env (not required for the free local chatbot)
+- node_modules (install dependencies with npm install)
 
-The backend entry point is server.js at repository root.
-The website uses:
+The active chatbot uses the browser-side Question Bank and Free Hybrid Search.
+No OpenAI API key, Gemini API key, or paid AI service is required for the chatbot search.
+
+Backend:
+- Entry point: server.js
+- Run: npm install
+- Start: npm start
+
+Website files:
 - assets/css/style.css
 - assets/images/dengue.png
 - assets/js/doctors.js
 - assets/js/dengue-questions.js
+- assets/js/dengue-search.js
 - assets/js/script.js
 
-Render settings:
-- Build Command: npm install
-- Start Command: npm start
+The legacy /api/chat endpoint is disabled and does not call a paid AI provider.
 
-Add OPENAI_API_KEY in Render -> Environment, if using the OpenAI chatbot endpoint.
+
+BATCH 3 - TASKS 40-53
+- Voice questions use browser-native SpeechRecognition (Chrome/Edge support varies).
+- Spoken answers use browser-native SpeechSynthesis.
+- No paid speech or AI API key is required.
+- Voice features should be tested on HTTPS and require microphone permission.
+- Bangla/Banglish language hints, starter prompts, analytics reports, Admin activity logs,
+  complete knowledge export and system health monitoring are included.
+- Firestore Rules now include append-only Admin activity logs. Compare and merge
+  firestore_rules_current.txt with your deployed Rules before publishing.
+
+LOCAL VALIDATION
+- npm run test:task40-53
+- npm run audit:release
+- npm run test:full
+
+Do not overwrite newer production Firestore Rules blindly. Back them up and merge the
+admin_activity_logs collection rule before deploying the website files.
+
+
+BATCH 4 - TASKS 54-58: PATIENT MONITORING
+- Replaces the appointment-only user-dashboard.html with a patient health dashboard.
+- Adds assets/js/patient-dashboard.js.
+- Adds owner-only Firestore collections: symptom_logs, blood_reports, hydration_logs,
+  patient_reminders.
+- Health records are private to the signed-in patient. No automatic doctor/Admin access.
+- Blood charts show recorded trends only; they do not diagnose or determine severity.
+- Hydration tracking does not prescribe a fluid target.
+- Follow-up reminders are in-dashboard only; background push notifications are not included.
+
+VALIDATION
+- npm run test:task54-58
+- npm run audit:release
+- npm run test:full
+
+DEPLOYMENT
+Back up and merge firestore_rules_current.txt with the live Firebase Rules before publishing.
+Do not overwrite newer production rules blindly. Deploy Rules before the dashboard files.
+
+
+BATCH 5 - TASKS 59-62: ADVANCED DENGUE MEDICAL INTELLIGENCE
+- Adds transparent, deterministic warning-sign detection (not a generative AI diagnosis).
+- Adds blood-report trend interpretation without universal normal/critical cut-offs.
+- Adds current official WHO 2025 and CDC 2026 medical references to the chatbot.
+- Adds patient summary generation, copy and print.
+- Extends the existing symptom_logs Firestore allowlist for new warning-sign checkboxes.
+- No paid AI API or new patient-data cloud collection is added.
+
+VALIDATION
+- npm run test:task59-62
+- npm run audit:release
+- npm run test:full
+
+DEPLOYMENT
+Back up and merge firestore_rules_current.txt with the currently deployed Firestore Rules.
+The new symptom options will be rejected by Firestore until the extended allowlist is deployed.
+- Task 61 adds relevant official reference citations to existing answers; it does not yet implement live source-page retrieval/RAG.
+
+
+BATCH 6 - TASKS 63-67: ADVANCED CHATBOT UPGRADE
+- Existing Top-15, hybrid search, basic context, browser voice and language detection are upgraded rather than duplicated.
+- Adds match-reason explanations to similar-question results.
+- Expands Banglish semantic aliases and typo-tolerant search.
+- Extends in-memory follow-up context to five turns, expiring after 15 minutes.
+- Adds an explicit new-topic/context reset control.
+- Adds voice input language selection and optional read-aloud (off by default).
+- Improves Bangla/Banglish/English detection and shows a language hint.
+- No new Firestore collection, Firebase config change, Firestore Rules change, paid AI API or custom speech API.
+- Important privacy note: browser speech recognition may process microphone audio through the browser/provider depending on its implementation and settings. The app cannot guarantee on-device processing; use typed input for sensitive details.
+
+VALIDATION
+- npm run test:task63-67
+- npm run audit:release
+- npm run test:full
+
+Firebase Rules do not need to change for Batch 6. Test manually before pushing to the live main branch.
+
+
+BATCH 7 - TASKS 68-72: PATIENT INTELLIGENCE
+- Task 68 adds private patient medical history.
+- Task 69 adds English/Bangla browser-side OCR suggestions; user must verify and apply before saving.
+- Task 70 adds one-time medication reminders from clinician-entered instructions, with optional browser notifications.
+- Task 71 adds a chronological symptom/lab/fluid timeline.
+- Task 72 adds a print-ready patient health report; user chooses Save as PDF.
+- Firebase config/Auth are unchanged.
+- Firestore Rules need a careful merge for patient_medical_history and patient_medications before using these two features against live Firebase.
+- Do not replace live Firestore Rules blindly. Back them up first.
+- OCR requires network access to load Tesseract.js and language data. The report image is processed in the browser, not stored in Firestore.
+- Medication reminders are not background push; the dashboard must remain open for a scheduled notification.
+
+VALIDATION
+- npm run test:task68-72
+- npm run audit:release
+- npm run test:full
+
+MANUAL TESTING
+Test with two separate patient accounts, sample English/Bangla lab images, dummy medication reminders, timeline records and print-to-PDF before deploying.
+
+
+BATCH 8–10 — TASKS 73–92
+- This cumulative ZIP contains Task 1–92.
+- Merge/deploy the full firestore.rules file only after backing up and reviewing the live rules.
+- Enable Firebase Phone Auth + SMS MFA and add Authorized Domains before testing Task 86.
+- Task 89 scheduled backup is not active until Cloud Functions are deployed (Blaze plan) and the private Storage bucket/service-account permissions are confirmed.
+- Do not claim backups are running until function logs and stored manifests confirm a successful run.
+- Patient messaging is access-controlled but not end-to-end encrypted. Do not send emergency or highly sensitive information.
+- PWA requires HTTPS for installation. Offline mode only exposes the app shell and the user's manually saved encrypted offline archive; live Firebase data still needs internet.
+- Account deletion requires reauthentication; accepted appointments block deletion. Older anonymous data cannot be associated with the account.
+
+TEST COMMANDS
+npm run test:task73-92
+npm run test:task68-72
+npm run audit:release
+npm run test:full
+
+MANUAL TESTING
+Test Doctor A vs Doctor B schedule permissions, patient-vs-doctor messaging access, two patient accounts, MFA test phone, encrypted archive wrong/correct passphrase, offline unlock, JSON export, account deletion, PWA install, and backup restore in a separate test project.
+
+
+CHATBOT UI REFINEMENT
+- Chat history, voice settings, privacy notice, language status and question suggestions are grouped under the collapsed "Chat settings" panel.
+- The message composer stays visible at the bottom; the answer area expands into the freed space.
+- Starter prompts wrap on small screens and hide after the first question. They return after clearing the visible chat.
+- The PWA cache was bumped to v3-chatbot-ui. After deployment, refresh once; if an installed PWA still shows old files, close/reopen it or clear the old site cache.
+- No Firebase config or Firestore Rules changes were made for this UI-only refinement.
+
+UI regression command:
+npm run test:chatbot-ui
+
+
+CHATBOT UI REFINEMENT V2
+- Suggested prompts now wrap in a grid and disappear after the first question; they return after clearing visible chat.
+- The Settings summary is shorter and its controls remain available inside.
+- PWA cache version: v4-chatbot-ui. Deploy all files together. After updating, refresh the page; if an installed PWA continues to show stale assets, close it fully and reopen it.
+- No Firebase Rules/config changes were made.
+
+Re-run:
+npm run test:chatbot-ui

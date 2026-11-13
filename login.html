@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#087f8c">
     <title>User Login - Smart Dengue Management System</title>
 
     <style>
@@ -119,6 +121,18 @@
             <p id="message" role="status"></p>
         </form>
 
+        <section id="mfa-challenge" hidden style="margin-top:18px;padding:14px;border:1px solid #cbd5e1;border-radius:10px;">
+            <h2 style="font-size:18px;color:#087f8c;">Two-step verification</h2>
+            <p id="mfa-challenge-message" role="status">A second factor is required.</p>
+            <label for="mfa-factor-choice">Choose verification phone</label>
+            <select id="mfa-factor-choice" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;"></select>
+            <div id="mfa-login-recaptcha" style="margin-top:10px;"></div>
+            <button type="button" id="mfa-login-send-code">Send SMS code</button>
+            <label for="mfa-login-code">SMS verification code</label>
+            <input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+            <button type="button" id="mfa-login-verify-code">Verify and continue</button>
+        </section>
+
         <p class="link">
             Don't have an account?
             <a href="register.html">Register here</a>
@@ -134,7 +148,8 @@
 
         import {
             getAuth,
-            signInWithEmailAndPassword
+            signInWithEmailAndPassword,
+            getMultiFactorResolver, PhoneAuthProvider, PhoneMultiFactorGenerator, RecaptchaVerifier
         } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
@@ -158,6 +173,54 @@ import {
 const db = getFirestore(app);
         const loginForm = document.getElementById("login-form");
         const message = document.getElementById("message");
+        let pendingResolver = null;
+        let pendingVerificationId = null;
+        let mfaRecaptcha = null;
+
+        async function redirectSignedInUser(user) {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            const role = userSnap.exists() ? String(userSnap.data().role || "user").toLowerCase() : "user";
+            const returnTo = new URLSearchParams(window.location.search).get("return");
+            if (role === "admin") window.location.href = "assets/admin/admin-dashboard.html";
+            else if (role === "doctor") window.location.href = "assets/doctor/doctor-dashboard.html";
+            else if (returnTo === "appointment") window.location.href = "index.html#doctor-list";
+            else window.location.href = "index.html";
+        }
+
+        document.getElementById("mfa-login-send-code").addEventListener("click", async () => {
+            if (!pendingResolver) return;
+            try {
+                if (mfaRecaptcha) { mfaRecaptcha.clear(); mfaRecaptcha = null; }
+                mfaRecaptcha = new RecaptchaVerifier(auth, "mfa-login-recaptcha", { size: "normal" });
+                const index = Number(document.getElementById("mfa-factor-choice").value || 0);
+                const hint = pendingResolver.hints[index];
+                const provider = new PhoneAuthProvider(auth);
+                pendingVerificationId = await provider.verifyPhoneNumber(
+                    { multiFactorHint: hint, session: pendingResolver.session },
+                    mfaRecaptcha
+                );
+                document.getElementById("mfa-challenge-message").textContent = "SMS code sent. Enter it below.";
+            } catch (error) {
+                document.getElementById("mfa-challenge-message").textContent = `Could not send code: ${error.code || error.message}`;
+            }
+        });
+
+        document.getElementById("mfa-login-verify-code").addEventListener("click", async () => {
+            if (!pendingResolver || !pendingVerificationId) {
+                document.getElementById("mfa-challenge-message").textContent = "Send an SMS code first.";
+                return;
+            }
+            try {
+                const code = document.getElementById("mfa-login-code").value.trim();
+                const credential = PhoneAuthProvider.credential(pendingVerificationId, code);
+                const assertion = PhoneMultiFactorGenerator.assertion(credential);
+                const result = await pendingResolver.resolveSignIn(assertion);
+                message.textContent = "Two-step verification successful. Redirecting…";
+                await redirectSignedInUser(result.user);
+            } catch (error) {
+                document.getElementById("mfa-challenge-message").textContent = `Verification failed: ${error.code || error.message}`;
+            }
+        });
 
         loginForm.addEventListener("submit", async function(event) {
             event.preventDefault();
@@ -175,33 +238,33 @@ try {
 
     message.textContent = "Login successful! Redirecting...";
     message.style.color = "green";
-
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-    const role = userSnap.exists()
-        ? userSnap.data().role.toLowerCase()
-        : "user";
-
-    setTimeout(function() {
-        const returnTo = new URLSearchParams(window.location.search).get("return");
-
-        
-if (role === "admin") {
-    window.location.href = "assets/admin/admin-dashboard.html";
-} else if (role === "doctor") {
-    window.location.href = "assets/doctor/doctor-dashboard.html";
-} else if (returnTo === "appointment") {
-    window.location.href = "index.html#doctor-list";
-} else {
-    window.location.href = "index.html";
-}
-
-    }, 1000);
-
-         
-
+    await redirectSignedInUser(user);
 
             } catch (error) {
                 console.error("Login error:", error);
+
+                if (error.code === "auth/multi-factor-auth-required") {
+                    try {
+                        pendingResolver = getMultiFactorResolver(auth, error);
+                        const choice = document.getElementById("mfa-factor-choice");
+                        choice.replaceChildren();
+                        pendingResolver.hints.forEach((hint, index) => {
+                            const option = document.createElement("option");
+                            option.value = String(index);
+                            option.textContent = hint.phoneNumber || hint.displayName || `Factor ${index + 1}`;
+                            choice.append(option);
+                        });
+                        document.getElementById("mfa-challenge").hidden = false;
+                        document.getElementById("mfa-challenge-message").textContent = "Your account requires a second factor. Send a code to the enrolled phone.";
+                        message.textContent = "Password accepted. Complete two-step verification below.";
+                        message.style.color = "#087f8c";
+                        return;
+                    } catch (mfaError) {
+                        message.textContent = `Two-step verification could not start: ${mfaError.code || mfaError.message}`;
+                        message.style.color = "red";
+                        return;
+                    }
+                }
 
                 if (
                     error.code === "auth/invalid-credential" ||
@@ -219,5 +282,6 @@ if (role === "admin") {
             }
         });
     </script>
+<script src="/assets/js/pwa-register.js"></script>
 </body>
 </html>

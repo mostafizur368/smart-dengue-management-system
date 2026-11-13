@@ -1,216 +1,360 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard - Smart Dengue Management System</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f1f7f5;
-            color: #333;
-        }
-
-        .dashboard {
-            max-width: 1000px;
-            margin: 30px auto;
-        }
-
-        h1 {
-            color: #00897b;
-            text-align: center;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 11px 16px;
-            background: #00897b;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 7px;
-            cursor: pointer;
-        }
-
-        .appointment-card {
-            background: white;
-            padding: 22px;
-            margin-bottom: 18px;
-            border-radius: 12px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-            overflow-wrap: anywhere;
-        }
-
-        .appointment-card p {
-            line-height: 1.7;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: #fff3cd;
-            color: #765800;
-            font-weight: bold;
-        }
-
-        #message {
-            text-align: center;
-            margin: 25px 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#087f8c">
+  <meta name="theme-color" content="#087f8c">
+  <title>Patient Dashboard - Smart Dengue Management System</title>
+  <style>
+    :root{--teal:#087f8c;--teal-dark:#075e56;--ink:#17313a;--muted:#60747b;--line:#dce8e8;--surface:#fff;--bg:#f2f7f7;--warn:#fff5df;--warn-ink:#8a4b08;--danger:#fff0ef;--danger-ink:#a32620;--ok:#e9f8ef;--ok-ink:#17663b}
+    *{box-sizing:border-box}body{margin:0;padding:20px;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    .dashboard{max-width:1160px;margin:18px auto 50px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:10px}.brand-mark{width:42px;height:42px;border-radius:13px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:22px}
+    h1{margin:0;font-size:clamp(22px,4vw,30px)}h2{margin:0 0 14px;font-size:20px}h3{margin:0 0 9px;font-size:16px}
+    p{line-height:1.55}.muted{color:var(--muted)}.small{font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+    button,.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--teal);color:white;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    button.secondary,.btn.secondary{background:#e8f2f2;color:var(--teal-dark);border:1px solid #cfe1e1}button.danger{background:#fff0ef;color:#a32620;border:1px solid #f2c9c6}button:disabled{opacity:.55;cursor:not-allowed}
+    .welcome{margin:0 0 16px;color:var(--muted)}.notice{padding:13px 15px;border-radius:11px;background:#e9f5f6;border:1px solid #c8e3e5;color:#25565d;margin:14px 0 20px;font-size:13px}
+    .notice.warning{background:var(--warn);border-color:#f0d69c;color:var(--warn-ink)}.notice.danger{background:var(--danger);border-color:#f3c5c1;color:var(--danger-ink)}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:18px 0}.metric{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 12px rgba(15,55,60,.04)}
+    .metric .value{font-size:27px;font-weight:800;color:var(--teal-dark);margin:6px 0}.metric .label{font-size:12px;color:var(--muted)}
+    .section{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:20px;margin:16px 0;box-shadow:0 3px 12px rgba(15,55,60,.035);scroll-margin-top:14px}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .section-head p{margin:3px 0 0}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    label{display:block;font-size:13px;font-weight:700;color:#38535a;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #cbdada;border-radius:8px;padding:11px 12px;background:#fff;color:var(--ink);font:inherit;font-size:14px}
+    input:focus,select:focus,textarea:focus{outline:2px solid #a5d7da;border-color:var(--teal)}textarea{min-height:76px;resize:vertical}
+    .field.full{grid-column:1/-1}.help{font-size:11px;color:var(--muted);margin:5px 0 0}.form-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}
+    fieldset{border:1px solid var(--line);border-radius:10px;padding:12px;margin:0}.symptom-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+    .check{display:flex;align-items:flex-start;gap:7px;font-weight:500;font-size:13px;margin:0}.check input{width:auto;margin-top:2px;accent-color:var(--teal)}
+    .status{font-size:12px;color:var(--muted);min-height:18px}.record-list{display:grid;gap:10px;margin-top:14px}
+    .record{border:1px solid var(--line);border-radius:11px;padding:13px;background:#fcfefe}.record-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:4px 8px;border-radius:30px;background:#e8f2f2;color:var(--teal-dark);font-size:11px;font-weight:700}
+    .pill.warn{background:var(--warn);color:var(--warn-ink)}.pill.danger{background:var(--danger);color:var(--danger-ink)}.pill.done{background:var(--ok);color:var(--ok-ink)}
+    .empty{border:1px dashed #cbdada;border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px}
+    .table-wrap{overflow-x:auto;margin-top:12px}table{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}th{background:#f1f7f7;color:#3d5c63}
+    canvas{width:100%;height:220px;display:block}.chart-card{border:1px solid var(--line);border-radius:11px;padding:12px;margin-top:12px}.chart-note{font-size:11px;color:var(--muted);margin:4px 0 0}
+    .appointment-card{background:#fbfefe;border:1px solid var(--line);padding:14px;border-radius:11px;margin:10px 0}.appointment-card p{margin:5px 0;font-size:13px}
+    .clinical-insight{border:1px solid #cfe1e1;background:#f6fbfb;border-radius:11px;padding:14px;margin:12px 0;color:#284950}
+    .clinical-insight.warning{border-color:#efcf91;background:#fff8e9;color:#7b4a0b}
+    .clinical-insight.danger{border-color:#edc2bd;background:#fff2f0;color:#8c241d}
+    .clinical-insight h3{margin:0 0 8px}.clinical-insight p{font-size:13px;margin:6px 0;line-height:1.55}
+    .clinical-insight ul{margin:7px 0;padding-left:20px;font-size:13px;line-height:1.6}
+    .source-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.source-links a{font-size:12px;color:var(--teal-dark);text-decoration:underline}
+    .summary-output{white-space:pre-wrap;overflow-wrap:anywhere;background:#f7fafa;border:1px solid var(--line);padding:14px;border-radius:10px;font:12px/1.6 ui-monospace,Consolas,monospace;max-height:520px;overflow:auto}
+    .advanced-card{border:1px solid var(--line);border-radius:11px;padding:14px;margin:14px 0;background:#fcfefe}
+    .ocr-preview{display:block;max-width:100%;max-height:300px;object-fit:contain;border:1px solid var(--line);border-radius:10px;margin:12px 0;background:#f7fafa}
+    .ocr-suggestions{border:1px solid var(--line);background:#f8fbfb;border-radius:10px;padding:10px;margin:10px 0;font-size:13px}
+    .ocr-suggestions p{margin:6px 0;overflow-wrap:anywhere}
+    .recovery-timeline{border-left:2px solid #cfe1e1;margin:10px 0 10px 8px;padding:0 0 0 20px;list-style:none}
+    .recovery-timeline-item{position:relative;padding:8px 0 12px}
+    .recovery-timeline-item:before{content:"";position:absolute;left:-27px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--teal);border:2px solid white;box-shadow:0 0 0 1px #cfe1e1}
+    .recovery-timeline-item p{margin:4px 0 0;font-size:13px}
+    .footer-note{font-size:11px;color:var(--muted);text-align:center;margin:26px 0}.navlinks{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.navlinks a{font-size:12px;text-decoration:none;color:var(--teal-dark);background:#e8f2f2;padding:8px 10px;border-radius:20px}
+    #page-message{padding:10px 12px;border-radius:8px;background:#f5f8f8;color:var(--muted);font-size:13px;margin:12px 0}
+    @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.symptom-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){body{padding:11px}.dashboard{margin:8px auto 30px}.section{padding:14px}.grid{gap:8px}.metric{padding:12px}.metric .value{font-size:23px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.symptom-grid{grid-template-columns:1fr 1fr}.brand-mark{width:36px;height:36px}.topbar{align-items:flex-start}}
+    @media(max-width:360px){.symptom-grid{grid-template-columns:1fr}.actions button,.actions .btn{padding:9px 10px;font-size:12px}}
+    @media print{
+      body *{visibility:hidden!important}
+      #patient-summary,#patient-summary *{visibility:visible!important}
+      #patient-summary{position:absolute;left:0;top:0;width:100%;margin:0;border:0;box-shadow:none}
+      #patient-summary .form-actions,#patient-summary .status{display:none!important}
+      #patient-summary-output{max-height:none;overflow:visible;border:0}
+    }
+  </style>
 </head>
-
 <body>
-    <main class="dashboard">
-        <div class="top-bar">
-            <a class="btn" href="index.html">← Home</a>
-            <button class="btn" id="logout-btn">Logout</button>
+<main class="dashboard">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">✚</div>
+      <div><h1>My Health Dashboard</h1><div class="small muted">Smart Dengue Management System</div></div>
+    </div>
+    <div class="actions">
+      <a class="btn secondary" href="index.html">← Home</a>
+      <button class="secondary" id="refresh-dashboard" type="button">↻ Refresh</button>
+      <button id="logout-btn" type="button">Logout</button>
+    </div>
+  </header>
+
+  <p class="welcome" id="welcome">Checking your account…</p>
+  <div id="page-message" role="status" aria-live="polite">Loading your private health dashboard…</div>
+  <p id="patient-intelligence-status" class="status" role="status" aria-live="polite"></p>
+
+  <div class="notice">
+    <strong>Privacy:</strong> Your medical history, symptom logs, blood reports, hydration entries, medication reminders and follow-up records are saved under your account. Only your signed-in account can read these private records. Doctor sharing of medical history is not enabled.
+  </div>
+  <div class="notice warning">
+    <strong>Medical safety:</strong> This dashboard stores and displays information; it does not diagnose dengue or decide whether a blood result is safe. Follow your clinician’s advice. Seek urgent medical care for warning signs such as severe abdominal pain, repeated vomiting, bleeding, breathing difficulty, unusual drowsiness, cold/clammy skin or markedly reduced urination.
+  </div>
+
+  <section class="section" id="warning-review">
+    <div class="section-head"><div><h2>59 · Dengue Warning Sign Review</h2><p class="muted small">A safety checklist based on the symptoms you recorded. It is not a risk score or diagnosis.</p></div><span class="pill warn">Safety support</span></div>
+    <div id="patient-warning-review" class="clinical-insight"><h3>No assessment loaded</h3><p>Your saved symptom entries will be checked after the dashboard loads.</p></div>
+    <p class="help">If a warning sign is happening now, do not wait for the app or a scheduled appointment. Seek urgent medical care.</p>
+  </section>
+
+  <section aria-label="Health summary">
+    <div class="grid">
+      <article class="metric"><div class="label">Symptom entries today</div><div class="value" id="metric-symptoms">—</div><div class="small muted">Daily tracker</div></article>
+      <article class="metric"><div class="label">Latest platelet result</div><div class="value" id="metric-platelets">—</div><div class="small muted">×10⁹/L · entered by you</div></article>
+      <article class="metric"><div class="label">Fluids recorded today</div><div class="value" id="metric-hydration">—</div><div class="small muted">mL · no target is prescribed</div></article>
+      <article class="metric"><div class="label">Pending reminders</div><div class="value" id="metric-reminders">—</div><div class="small muted">Follow-up and lab tasks</div></article>
+    </div>
+  </section>
+
+  <nav class="navlinks" aria-label="Dashboard sections">
+    <a href="#symptoms">Daily symptoms</a><a href="#blood-reports">Blood reports</a><a href="#hydration">Hydration</a><a href="#reminders">Reminders</a><a href="#appointments">Appointments</a><a href="#medical-history">Medical history</a><a href="#lab-ocr-section">Lab OCR</a><a href="#medications">Medication reminders</a><a href="#recovery-progress">Recovery timeline</a><a href="#patient-pdf-report">PDF report</a><a href="#hospital-directory">Hospitals</a><a href="#patient-messaging">Doctor messages</a><a href="#account-security">2FA</a><a href="#encrypted-vault">Encrypted archive</a><a href="#offline-records">Offline records</a><a href="#data-management">Data export</a>
+  </nav>
+
+  <section class="section" id="symptoms">
+    <div class="section-head"><div><h2>55 · Daily Symptom Tracker</h2><p class="muted small">Record how you feel each day. You can add more than one entry per day.</p></div><span class="pill">Patient record</span></div>
+    <form id="symptom-form">
+      <div class="form-grid">
+        <div class="field"><label for="symptom-date">Date</label><input id="symptom-date" type="date" required></div>
+        <div class="field"><label for="symptom-temperature">Temperature (°C), if measured</label><input id="symptom-temperature" type="number" min="34" max="43" step="0.1" placeholder="e.g. 38.2"><p class="help">Enter a measured value; leave blank if not measured.</p></div>
+        <div class="field full">
+          <label>Symptoms today</label>
+          <fieldset><div class="symptom-grid">
+            <label class="check"><input type="checkbox" name="symptom" value="fever"> Fever</label>
+            <label class="check"><input type="checkbox" name="symptom" value="headache"> Headache</label>
+            <label class="check"><input type="checkbox" name="symptom" value="eye-pain"> Pain behind eyes</label>
+            <label class="check"><input type="checkbox" name="symptom" value="body-joint-pain"> Muscle / joint pain</label>
+            <label class="check"><input type="checkbox" name="symptom" value="rash"> Skin rash</label>
+            <label class="check"><input type="checkbox" name="symptom" value="nausea"> Nausea</label>
+            <label class="check"><input type="checkbox" name="symptom" value="repeated-vomiting"> Repeated vomiting</label>
+            <label class="check"><input type="checkbox" name="symptom" value="severe-abdominal-pain"> Severe abdominal pain</label>
+            <label class="check"><input type="checkbox" name="symptom" value="bleeding"> Bleeding</label>
+            <label class="check"><input type="checkbox" name="symptom" value="breathing-difficulty"> Breathing difficulty</label>
+            <label class="check"><input type="checkbox" name="symptom" value="unusual-drowsiness"> Unusual drowsiness</label>
+            <label class="check"><input type="checkbox" name="symptom" value="cold-clammy-skin"> Cold / clammy skin</label>
+            <label class="check"><input type="checkbox" name="symptom" value="reduced-urination"> Markedly reduced urination</label>
+            <label class="check"><input type="checkbox" name="symptom" value="rapid-breathing"> Rapid breathing</label>
+            <label class="check"><input type="checkbox" name="symptom" value="fainting"> Fainting / feeling faint</label>
+            <label class="check"><input type="checkbox" name="symptom" value="blood-vomit-stool"> Blood in vomit / stool or black stool</label>
+            <label class="check"><input type="checkbox" name="symptom" value="fluid-accumulation"> New fluid build-up / swelling reported</label>
+            <label class="check"><input type="checkbox" name="symptom" value="marked-restlessness"> Unusual restlessness</label>
+            <label class="check"><input type="checkbox" name="symptom" value="pale-cold-skin"> Pale, cold or clammy skin</label>
+            <label class="check"><input type="checkbox" name="symptom" value="very-thirsty"> Unusual intense thirst</label>
+            <label class="check"><input type="checkbox" name="symptom" value="liver-enlargement"> Clinician reported enlarged liver</label>
+          </div></fieldset>
+          <p id="symptom-warning" class="help" role="status" aria-live="polite">If a warning sign is present, seek urgent medical care; do not wait for the app.</p>
         </div>
+        <div class="field full"><label for="symptom-notes">Notes (optional)</label><textarea id="symptom-notes" maxlength="1000" placeholder="Any other changes or information for your clinician"></textarea></div>
+      </div>
+      <div class="form-actions"><button type="submit">Save symptom entry</button><span class="status" id="symptom-status"></span></div>
+    </form>
+    <div id="symptom-list" class="record-list"><div class="empty">Your symptom entries will appear here.</div></div>
+  </section>
 
-        <h1>📋 My Appointment Dashboard</h1>
-        <p id="welcome" style="text-align:center;"></p>
+  <section class="section" id="blood-reports">
+    <div class="section-head"><div><h2>56 · Blood Report Tracker & Trend View</h2><p class="muted small">Enter values exactly as shown on your laboratory report.</p></div><span class="pill">Trend only · not diagnosis</span></div>
+    <div class="notice warning">Platelet count alone does not determine dengue severity. These charts only show your recorded values over time. Reference ranges vary by laboratory and patient; ask your clinician to interpret results, especially the hematocrit trend.</div>
+    <form id="blood-form">
+      <div class="form-grid">
+        <div class="field"><label for="report-date">Report date</label><input id="report-date" type="date" required></div>
+        <div class="field"><label for="lab-name">Laboratory (optional)</label><input id="lab-name" maxlength="100" placeholder="Laboratory name"></div>
+        <div class="field"><label for="platelet-count">Platelets (×10⁹/L)</label><input id="platelet-count" type="number" min="0" max="2000" step="0.1" placeholder="e.g. 150"></div>
+        <div class="field"><label for="hematocrit">Hematocrit / HCT (%)</label><input id="hematocrit" type="number" min="0" max="80" step="0.1" placeholder="e.g. 40"></div>
+        <div class="field"><label for="wbc-count">WBC (×10⁹/L)</label><input id="wbc-count" type="number" min="0" max="100" step="0.1" placeholder="e.g. 4.5"></div>
+        <div class="field"><label for="hemoglobin">Hemoglobin (g/dL)</label><input id="hemoglobin" type="number" min="0" max="30" step="0.1" placeholder="e.g. 13.5"></div>
+        <div class="field full"><label for="blood-notes">Notes (optional)</label><textarea id="blood-notes" maxlength="1000" placeholder="Add report context or the lab's printed reference range if useful"></textarea></div>
+      </div>
+      <div class="form-actions"><button type="submit">Save blood report</button><span class="status" id="blood-status"></span></div>
+    </form>
+    <div class="advanced-card" id="lab-ocr-section">
+      <h3>69 · Lab Report OCR (English / Bangla)</h3>
+      <p class="help">OCR runs in your browser. The image is not uploaded to Firestore. A network connection is needed to load the OCR engine and language data. OCR can misread digits, decimal points and units; verify every suggestion against the original report.</p>
+      <div class="form-grid">
+        <div class="field"><label for="lab-ocr-file">Report image (JPG, PNG or WebP, maximum 8 MB)</label><input type="file" id="lab-ocr-file" accept="image/png,image/jpeg,image/webp"></div>
+        <div class="field"><label for="lab-ocr-language">Report language</label><select id="lab-ocr-language"><option value="eng">English</option><option value="eng+ben">English + বাংলা</option></select></div>
+      </div>
+      <img id="lab-ocr-preview" class="ocr-preview" alt="Selected laboratory report preview" hidden>
+      <div class="form-actions"><button type="button" id="lab-ocr-run" class="primary">Read report image</button><button type="button" id="lab-ocr-apply" class="secondary" disabled>Apply reviewed suggestions to form</button></div>
+      <p id="lab-ocr-status" class="status" role="status" aria-live="polite"></p>
+      <div id="lab-ocr-suggestions" class="ocr-suggestions" aria-live="polite"></div>
+      <details><summary>View raw OCR text</summary><pre id="lab-ocr-text"></pre></details>
+    </div>
+    <div id="blood-interpretation-panel" class="clinical-insight"><h3>Report interpretation</h3><p>Enter report values to see a plain-language summary of recorded values and trends.</p></div>
+    <div class="chart-card"><h3>Platelet trend</h3><canvas id="platelet-chart" role="img" aria-label="Platelet result trend chart"></canvas><p class="chart-note" id="platelet-chart-note">Add at least two reports with platelet values to see a trend.</p></div>
+    <div class="chart-card"><h3>Hematocrit trend</h3><canvas id="hct-chart" role="img" aria-label="Hematocrit result trend chart"></canvas><p class="chart-note" id="hct-chart-note">Add at least two reports with hematocrit values to see a trend.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Date</th><th>Platelets (×10⁹/L)</th><th>HCT (%)</th><th>WBC (×10⁹/L)</th><th>Hemoglobin (g/dL)</th><th>Lab</th><th>Action</th></tr></thead><tbody id="blood-table"><tr><td colspan="7">No reports saved yet.</td></tr></tbody></table></div>
+  </section>
 
-        <div id="message">Checking login and loading appointments...</div>
-        <div id="appointments-list"></div>
-    </main>
+  <section class="section" id="hydration">
+    <div class="section-head"><div><h2>57 · Hydration Tracker</h2><p class="muted small">Record fluids you have actually consumed.</p></div><span class="pill">Daily log</span></div>
+    <div class="notice warning">This tracker does not set a fluid target. Follow your clinician’s fluid advice. Do not force fluids; people with certain medical conditions may need an individualized plan.</div>
+    <form id="hydration-form">
+      <div class="form-grid">
+        <div class="field"><label for="fluid-date">Date and time</label><input id="fluid-date" type="datetime-local" required></div>
+        <div class="field"><label for="fluid-type">Fluid type</label><select id="fluid-type" required><option value="water">Water</option><option value="oral-rehydration-solution">Oral rehydration solution (ORS)</option><option value="soup">Soup</option><option value="other">Other</option></select></div>
+        <div class="field"><label for="fluid-amount">Amount (mL)</label><input id="fluid-amount" type="number" min="1" max="5000" step="1" required placeholder="e.g. 250"></div>
+        <div class="field"><label for="fluid-notes">Notes (optional)</label><input id="fluid-notes" maxlength="300" placeholder="Optional note"></div>
+      </div>
+      <div class="form-actions"><button type="submit">Add fluid entry</button><span class="status" id="hydration-status"></span></div>
+    </form>
+    <div class="record-list" id="hydration-list"><div class="empty">Your fluid entries will appear here.</div></div>
+  </section>
 
-    <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  <section class="section" id="reminders">
+    <div class="section-head"><div><h2>58 · Follow-up Reminders</h2><p class="muted small">Create reminders for appointments, lab tests and clinician follow-ups.</p></div><span class="pill">In-app reminder</span></div>
+    <div class="notice">Reminders are shown when you open this dashboard. Background push notifications are not included in this release. This tool does not create or change medication prescriptions.</div>
+    <form id="reminder-form">
+      <div class="form-grid">
+        <div class="field"><label for="reminder-title">Reminder title</label><input id="reminder-title" minlength="3" maxlength="120" required placeholder="e.g. Follow-up with doctor"></div>
+        <div class="field"><label for="reminder-category">Category</label><select id="reminder-category"><option value="doctor-visit">Doctor visit</option><option value="lab-test">Lab test</option><option value="follow-up">Clinical follow-up</option><option value="other">Other</option></select></div>
+        <div class="field"><label for="reminder-due">Date and time</label><input id="reminder-due" type="datetime-local" required></div>
+        <div class="field"><label for="reminder-notes">Notes (optional)</label><input id="reminder-notes" maxlength="500" placeholder="Location or preparation note"></div>
+      </div>
+      <div class="form-actions"><button type="submit">Save reminder</button><span class="status" id="reminder-status"></span></div>
+    </form>
+    <div id="reminder-list" class="record-list"><div class="empty">No reminders saved yet.</div></div>
+  </section>
 
-        import {
-            getAuth,
-            onAuthStateChanged,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  <section class="section" id="appointments">
+    <div class="section-head"><div><h2>My Doctor Appointments</h2><p class="muted small">Your existing appointment tickets are retained here.</p></div><a class="btn secondary" href="index.html#appointment-section">Book appointment</a></div>
+    <div id="appointments-list"><div class="empty">Loading appointments…</div></div>
+  </section>
 
-        import {
-            getFirestore,
-            collection,
-            query,
-            where,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  <section class="section" id="medical-history">
+    <div class="section-head"><div><h2>68 · Digital Medical History</h2><p class="muted small">Private information for your own records. It is not automatically shared with doctors or Admin.</p></div><span class="pill">Owner-only</span></div>
+    <form id="medical-history-form">
+      <div class="form-grid">
+        <div class="field"><label for="medical-conditions">Known conditions (optional)</label><textarea id="medical-conditions" maxlength="1500" placeholder="Only conditions diagnosed by a qualified clinician"></textarea></div>
+        <div class="field"><label for="medical-allergies">Allergies (optional)</label><textarea id="medical-allergies" maxlength="1000" placeholder="Medicine, food or other allergies"></textarea></div>
+        <div class="field"><label for="medical-history-notes">Other medical history (optional)</label><textarea id="medical-history-notes" maxlength="1500" placeholder="Relevant details you want to keep in your private record"></textarea></div>
+        <div class="field"><label for="medical-emergency-contact">Emergency contact (optional)</label><input id="medical-emergency-contact" maxlength="80" placeholder="Name and phone number"></div>
+      </div>
+      <div class="form-actions"><button type="submit">Save medical history</button><span id="medical-history-status" class="status" role="status"></span></div>
+    </form>
+  </section>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
-            authDomain: "smart-dengue-management-system.firebaseapp.com",
-            projectId: "smart-dengue-management-system",
-            storageBucket: "smart-dengue-management-system.firebasestorage.app",
-            messagingSenderId: "164368465699",
-            appId: "1:164368465699:web:79fe552bea0b2bfc405696",
-            measurementId: "G-384ZPGT9NN"
-        };
+  <section class="section" id="medications">
+    <div class="section-head"><div><h2>70 · Medicine Schedule & Reminder</h2><p class="muted small">Record only medicine instructions already prescribed or confirmed by your clinician.</p></div><span class="pill">One-time reminder</span></div>
+    <div class="notice warning">This tool does not recommend medicines or doses, change a prescription, or repeat doses automatically. Browser notifications work only while this dashboard is open. Follow the prescriber's exact instructions.</div>
+    <form id="medication-form">
+      <div class="form-grid">
+        <div class="field"><label for="medication-name">Medicine name</label><input id="medication-name" maxlength="100" required></div>
+        <div class="field"><label for="medication-dose">Prescribed dose / instruction</label><input id="medication-dose" maxlength="120" required placeholder="Copy the clinician's exact instruction"></div>
+        <div class="field"><label for="medication-schedule">Schedule / frequency</label><input id="medication-schedule" maxlength="120" required placeholder="As written on your prescription"></div>
+        <div class="field"><label for="medication-next-reminder">Next reminder date and time</label><input id="medication-next-reminder" type="datetime-local" required></div>
+        <div class="field full"><label for="medication-notes">Notes (optional)</label><input id="medication-notes" maxlength="400"></div>
+      </div>
+      <div class="form-actions"><button type="submit">Save reminder</button><span id="medication-status" class="status" role="status"></span></div>
+    </form>
+    <div class="form-actions"><button type="button" id="medication-notification-enable" class="secondary">Enable browser notifications</button><button type="button" id="medication-reminders-check" class="secondary">Check due reminders</button></div>
+    <p id="medication-notification-status" class="status" role="status" aria-live="polite">Notifications are off until you explicitly enable them.</p>
+    <div id="medication-list" class="record-list"><div class="empty">No medication reminders saved yet.</div></div>
+  </section>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+  <section class="section" id="recovery-progress">
+    <div class="section-head"><div><h2>71 · Recovery Progress Timeline</h2><p class="muted small">Chronological view of the symptom, laboratory and fluid records you entered.</p></div><span class="pill">Record timeline</span></div>
+    <div id="recovery-progress-list" class="clinical-insight">Loading your records…</div>
+    <p class="help">This timeline does not calculate a recovery score, predict outcomes, confirm dengue has resolved, or replace a clinician's assessment.</p>
+  </section>
 
-        const message = document.getElementById("message");
-        const appointmentsList = document.getElementById("appointments-list");
+  <section class="section" id="patient-pdf-report">
+    <div class="section-head"><div><h2>72 · PDF Health Report</h2><p class="muted small">Create a print-ready report from your own medical history, symptoms, laboratory results, fluid records and medication reminders.</p></div><span class="pill">Patient-controlled export</span></div>
+    <div class="notice warning">The report contains sensitive health information. Save it only to a device or location you trust. It is not a diagnosis or treatment recommendation.</div>
+    <button type="button" id="patient-pdf-generate">Generate PDF report</button>
+    <p id="patient-pdf-status" class="status" role="status" aria-live="polite"></p>
+  </section>
 
-        onAuthStateChanged(auth, async function(user) {
-            if (!user) {
-                window.location.href = "login.html";
-                return;
-            }
+  <section class="section" id="hospital-directory">
+    <div class="section-head"><div><h2>76–77 · Hospital Directory & Emergency Locator</h2><p class="muted small">Directory entries are Admin-maintained. Nearest results use straight-line distance, not road travel time.</p></div><span class="pill">Location optional</span></div>
+    <div class="form-grid">
+      <div class="field"><label for="hospital-search">Search hospital, city or address</label><input id="hospital-search" type="search" placeholder="Search hospitals"></div>
+      <div class="field"><label>Emergency location</label><button type="button" id="hospital-locate-nearest">Find nearest listed hospitals</button></div>
+    </div>
+    <p id="hospital-directory-status" class="status" role="status">Loading directory…</p>
+    <p id="hospital-locator-status" class="status" role="status"></p>
+    <a id="hospital-emergency-map" href="#" target="_blank" rel="noopener noreferrer" hidden>Search emergency hospitals on map</a>
+    <div id="hospital-directory-list" class="record-list"></div>
+    <div class="notice warning">If you have severe abdominal pain, repeated vomiting, bleeding, breathing difficulty, fainting or unusual drowsiness, seek emergency care immediately. Do not wait for this locator or an online appointment.</div>
+  </section>
 
-            document.getElementById("welcome").textContent =
-                "Welcome, " + (user.displayName || user.email);
-                console.log("Logged-in UID:", user.uid);
+  <section class="section" id="patient-messaging">
+    <div class="section-head"><div><h2>78 · Secure Doctor–Patient Messaging</h2><p class="muted small">Private conversation with a verified doctor. This is not an emergency channel and is not continuously monitored.</p></div><span class="pill">Authenticated participants</span></div>
+    <div class="form-grid">
+      <div class="field"><label for="patient-message-doctor">Verified doctor</label><select id="patient-message-doctor"><option value="">Loading verified doctors…</option></select></div>
+      <div class="field"><label>Start or open conversation</label><button type="button" id="patient-message-start">Start secure conversation</button></div>
+    </div>
+    <p id="patient-message-status" class="status" role="status"></p>
+    <h3>Your conversations</h3><div id="patient-conversation-list" class="record-list"></div>
+    <h3>Message thread</h3><div id="patient-message-thread" class="record-list" style="max-height:320px;overflow:auto"></div>
+    <form id="patient-message-form"><label for="patient-message-text">Message (maximum 2,000 characters)</label><textarea id="patient-message-text" maxlength="2000" required></textarea><button type="submit">Send message</button></form>
+    <p class="help">Messages are access-controlled by Firestore Rules, but are not end-to-end encrypted; authorized Admin access is possible. Do not send passwords, payment details, highly sensitive documents or urgent medical requests.</p>
+  </section>
 
-            message.textContent = "Loading your appointments...";
+  <section class="section" id="account-security">
+    <div class="section-head"><div><h2>86 · Two-Factor Authentication</h2><p class="muted small">Optional Firebase SMS second factor for this account.</p></div><span class="pill">Firebase Auth MFA</span></div>
+    <div class="notice warning">Verify your email first. Firebase Phone Authentication and Multi-factor Authentication must be enabled in Firebase Console. SMS may incur provider charges and requires an authorized domain. Never share verification codes.</div>
+    <div id="mfa-enrolled-list" class="record-list">Checking enrolled factors…</div>
+    <div class="field"><label for="mfa-phone-number">Phone number in international format</label><input id="mfa-phone-number" type="tel" placeholder="+8801XXXXXXXXX" autocomplete="tel"></div>
+    <div id="mfa-recaptcha-container"></div>
+    <button type="button" id="mfa-start-enrollment">Send enrollment code</button>
+    <div id="mfa-code-row" hidden><label for="mfa-sms-code">SMS verification code</label><input id="mfa-sms-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8"><button type="button" id="mfa-finish-enrollment">Verify and enable 2FA</button></div>
+    <p id="mfa-status" class="status" role="status"></p>
+  </section>
 
-            try {
-                const appointmentsQuery = query(
-                    collection(db, "appointments"),
-                    where("userId", "==", user.uid)
-                );
+  <section class="section" id="encrypted-vault">
+    <div class="section-head"><div><h2>87 · Client-Side Encrypted Health Archive</h2><p class="muted small">Encrypt a copy of your account-linked records before saving it to your private Firestore vault.</p></div><span class="pill">AES-GCM 256</span></div>
+    <div class="notice warning">Use a unique passphrase of at least 12 characters. The passphrase is not stored. If you lose it, the encrypted archive cannot be recovered. Existing Firestore records remain governed by Firebase's server-side encryption and access rules; this feature does not retroactively encrypt every existing record.</div>
+    <label for="vault-passphrase">Encryption passphrase</label><input id="vault-passphrase" type="password" minlength="12" autocomplete="new-password">
+    <div class="form-actions"><button type="button" id="vault-save">Create / replace encrypted archive</button><button type="button" id="vault-restore" class="secondary">Decrypt and download archive</button></div>
+    <p id="vault-status" class="status" role="status"></p>
+  </section>
 
-                const snapshot = await getDocs(appointmentsQuery);
+  <section class="section" id="offline-records">
+    <div class="section-head"><div><h2>91 · Offline Health Records</h2><p class="muted small">Save an encrypted copy in this browser's local IndexedDB for offline access.</p></div><span class="pill">This device only</span></div>
+    <div class="notice">The offline copy is encrypted with your passphrase and is not synced. Anyone with the passphrase and this device profile may decrypt it. Clear browser storage to remove other site data too.</div>
+    <label for="offline-account-email">Account email (used only to find this device's encrypted archive)</label><input id="offline-account-email" type="email" autocomplete="email">
+    <label for="offline-passphrase">Offline archive passphrase (at least 12 characters)</label><input id="offline-passphrase" type="password" minlength="12" autocomplete="new-password">
+    <div class="form-actions"><button type="button" id="offline-save">Save encrypted offline copy</button><button type="button" id="offline-unlock" class="secondary">Unlock offline copy</button><button type="button" id="offline-delete" class="danger">Delete this device copy</button></div>
+    <p id="offline-status" class="status" role="status"></p>
+    <pre id="offline-preview" hidden style="max-height:300px;overflow:auto;white-space:pre-wrap"></pre>
+  </section>
 
-                appointmentsList.replaceChildren();
+  <section class="section" id="data-management">
+    <div class="section-head"><div><h2>92 · Data Export & Account Deletion</h2><p class="muted small">Download the account-linked data this app can identify, or request permanent deletion of your Patient account.</p></div><span class="pill">Your data controls</span></div>
+    <button type="button" id="data-export-button">Export my account data (JSON)</button>
+    <p id="data-export-status" class="status" role="status"></p>
+    <div class="notice warning">Account deletion is permanent. Export first. Any existing appointment record must be resolved with Admin first so ticket capacity is reconciled. Re-authentication is required. Older anonymous symptom checks or contact messages that were not linked to your UID cannot be reliably identified by this account-deletion tool.</div>
+    <div id="delete-mfa-recaptcha"></div>
+    <div class="field"><label for="delete-account-password">Confirm current account password</label><input id="delete-account-password" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="delete-account-confirmation">Type DELETE to confirm</label><input id="delete-account-confirmation" autocomplete="off"></div>
+    <button type="button" id="delete-account-button" class="danger">Permanently delete my Patient account</button>
+    <p id="delete-account-status" class="status" role="status"></p>
+  </section>
 
-                if (snapshot.empty) {
-                    message.textContent =
-                        "No appointments found for this account.";
-                    return;
-                }
+  <section class="section" id="patient-summary">
+    <div class="section-head"><div><h2>62 · AI-Assisted Patient Summary</h2><p class="muted small">Create a concise, printable summary of your own records for a clinician discussion.</p></div><span class="pill">Private summary</span></div>
+    <div class="notice">This summary is assembled from your saved entries using transparent rules. It is not a diagnosis, treatment plan or substitute for the original reports.</div>
+    <div class="form-actions">
+      <button type="button" id="generate-patient-summary">Generate summary</button>
+      <button type="button" class="secondary" id="copy-patient-summary" disabled>Copy summary</button>
+      <button type="button" class="secondary" id="print-patient-summary" disabled>Print summary</button>
+    </div>
+    <p class="status" id="patient-summary-status" role="status" aria-live="polite"></p>
+    <pre id="patient-summary-output" class="summary-output">Generate a summary after your records have loaded.</pre>
+  </section>
 
-                snapshot.forEach(function(docSnapshot) {
-                    const appointment = docSnapshot.data();
+  <section class="section" id="medical-sources">
+    <div class="section-head"><div><h2>61 · Trusted Medical References</h2><p class="muted small">Official guidance used for educational context. A source link does not clinically verify a specific answer.</p></div><span class="pill">Source-based</span></div>
+    <div id="patient-medical-source-list" class="source-links"></div>
+  </section>
 
-                    const card = document.createElement("article");
-                    card.className = "appointment-card";
-
-                    const title = document.createElement("h2");
-                    title.textContent = "🎫 Appointment Ticket";
-                    card.appendChild(title);
-
-                    const fields = [
-                        ["Ticket ID", docSnapshot.id],
-                        ["Patient", appointment.patientName],
-                        ["Phone", appointment.patientPhone],
-                        ["Doctor", appointment.doctorName],
-                        ["Date", appointment.appointmentDate],
-                        ["Time", appointment.appointmentTime],
-                        ["Status", appointment.status || "Pending"]
-                    ];
-
-                    fields.forEach(function(field) {
-                        const paragraph = document.createElement("p");
-                        const label = document.createElement("strong");
-
-                        label.textContent = field[0] + ": ";
-                        paragraph.appendChild(label);
-                        paragraph.appendChild(
-                            document.createTextNode(
-                                field[1] == null ? "Not available" : String(field[1])
-                            )
-                        );
-
-                        card.appendChild(paragraph);
-                    });
-
-                    appointmentsList.appendChild(card);
-                });
-
-                message.textContent = "Your appointments are shown below.";
-
-            } catch (error) {
-                console.error("Dashboard error:", error);
-                message.textContent =
-                    "Could not load appointments. Please check Firestore permissions and try again.";
-            }
-        });
-
-        document.getElementById("logout-btn").addEventListener("click", async function() {
-            try {
-                await signOut(auth);
-                window.location.href = "login.html";
-            } catch (error) {
-                alert("Logout failed: " + error.message);
-            }
-        });
-    </script>
+  <p class="footer-note">Smart Dengue Management System · Your entries are personal records, not a diagnosis. For urgent symptoms, contact emergency care directly.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="assets/js/dengue-ai-clinical.js"></script>
+<script type="module" src="assets/js/patient-dashboard.js"></script>
+<script type="module" src="assets/js/patient-intelligence.js"></script>
+<script type="module" src="assets/js/patient-care-services.js"></script>
+<script type="module" src="assets/js/patient-messaging.js"></script>
+<script type="module" src="assets/js/patient-security-data.js"></script>
+<script src="assets/js/pwa-register.js"></script>
 </body>
 </html>

@@ -145,6 +145,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeAppCheckIfConfigured } from "./assets/js/firebase-app-check.js";
+        import { startSecuritySession } from "./assets/js/security-client.js";
 
         import {
             getAuth,
@@ -169,6 +171,7 @@ import {
         };
 
         const app = initializeApp(firebaseConfig);
+    initializeAppCheckIfConfigured(app);
         const auth = getAuth(app);
 const db = getFirestore(app);
         const loginForm = document.getElementById("login-form");
@@ -178,6 +181,8 @@ const db = getFirestore(app);
         let mfaRecaptcha = null;
 
         async function redirectSignedInUser(user) {
+            try { await startSecuritySession(user); }
+            catch (securityError) { console.warn("Security session registration is unavailable:", securityError); }
             const userSnap = await getDoc(doc(db, "users", user.uid));
             const role = userSnap.exists() ? String(userSnap.data().role || "user").toLowerCase() : "user";
             const returnTo = new URLSearchParams(window.location.search).get("return");

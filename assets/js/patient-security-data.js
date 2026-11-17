@@ -1,3 +1,4 @@
+import { initializeAppCheckIfConfigured } from "./firebase-app-check.js";
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, multiFactor, PhoneAuthProvider,
@@ -18,6 +19,7 @@ const config = {
   appId: "1:164368465699:web:79fe552bea0b2bfc405696"
 };
 const app = getApps().length ? getApp() : initializeApp(config);
+initializeAppCheckIfConfigured(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const $ = id => document.getElementById(id);
@@ -61,13 +63,18 @@ async function encryptJson(value, passphrase) {
     algorithm: "AES-GCM-256",
     kdf: "PBKDF2-SHA-256",
     iterations: 310000,
+    formatVersion: 2,
     salt: bytesToBase64(salt),
     iv: bytesToBase64(iv),
     ciphertext: bytesToBase64(encrypted)
   };
 }
 async function decryptJson(record, passphrase) {
-  if (record.algorithm !== "AES-GCM-256" || record.kdf !== "PBKDF2-SHA-256" || record.iterations !== 310000) {
+  const formatVersion = Number(record.formatVersion || 1);
+  if (![1, 2].includes(formatVersion)
+    || record.algorithm !== "AES-GCM-256"
+    || record.kdf !== "PBKDF2-SHA-256"
+    || record.iterations !== 310000) {
     throw new Error("Unsupported encrypted archive format.");
   }
   const key = await deriveKey(passphrase, base64ToBytes(record.salt));
@@ -86,7 +93,7 @@ async function ownedRecords(name) {
   return snap.docs.map(item => ({ id: item.id, ...item.data() }));
 }
 async function collectExportData() {
-  const names = ["symptom_logs", "blood_reports", "hydration_logs", "patient_reminders", "patient_medications", "chatbot_query_events", "chatbot_feedback"];
+  const names = ["symptom_logs", "blood_reports", "hydration_logs", "patient_reminders", "patient_medications", "chatbot_query_events", "chatbot_feedback", "patient_consent_records"];
   const [profile, history, ...collectionsData] = await Promise.all([
     getDoc(doc(db, "users", currentUser.uid)),
     getDoc(doc(db, "patient_medical_history", currentUser.uid)),
@@ -110,6 +117,7 @@ async function collectExportData() {
     exportedAt: new Date().toISOString(),
     account: profile.exists() ? profile.data() : { uid: currentUser.uid, email: currentUser.email },
     medicalHistory: history.exists() ? history.data() : null,
+    privacyPreferences: (await getDoc(doc(db, "patient_privacy_preferences", currentUser.uid))).data() || null,
     ...namesMap,
     appointments,
     doctorConversations: conversations
@@ -190,13 +198,17 @@ async function saveEncryptedVault() {
     const encrypted = await encryptJson(data, passphrase);
     const jsonSize = encrypted.ciphertext.length;
     if (jsonSize > 850000) throw new Error("Archive is too large for one Firestore document. Use the local encrypted download instead.");
+    const existing = await getDoc(doc(db, "patient_secure_vault", currentUser.uid));
+    const keyVersion = existing.exists() ? Math.max(1, Number(existing.data().keyVersion || 1) + 1) : 1;
     await setDoc(doc(db, "patient_secure_vault", currentUser.uid), {
       userId: currentUser.uid,
       ...encrypted,
       encryptedAt: serverTimestamp(),
-      formatVersion: 1
+      formatVersion: 2,
+      keyVersion
     });
-    setText("vault-status", "Encrypted archive saved. The passphrase is not stored; without it, the archive cannot be decrypted.");
+    setText("vault-status", `Encrypted archive saved (key version ${keyVersion}). The passphrase is not stored; without it, the archive cannot be decrypted.`);
+    await loadVaultKeyMetadata();
   } catch (error) {
     setText("vault-status", `Encrypted archive not saved: ${error.code || error.message}`, true);
   }
@@ -211,6 +223,70 @@ async function restoreEncryptedVault() {
     setText("vault-status", "Archive decrypted in this browser and downloaded. It was not written back to your records.");
   } catch (error) {
     setText("vault-status", `Could not decrypt archive: ${error.message || error.code}. Check your passphrase.`, true);
+  }
+}
+
+async function loadVaultKeyMetadata() {
+  const node = $("vault-key-metadata");
+  if (!node || !currentUser) return;
+  try {
+    const snap = await getDoc(doc(db, "patient_secure_vault", currentUser.uid));
+    if (!snap.exists()) {
+      node.textContent = "No cloud encrypted archive exists yet.";
+      return;
+    }
+    const data = snap.data();
+    const rotated = data.keyRotatedAt?.toDate ? data.keyRotatedAt.toDate().toLocaleString() : "Not rotated";
+    node.textContent = `Encryption format v${data.formatVersion || 1} · Key version ${data.keyVersion || 1} · Last rotation: ${rotated}`;
+  } catch (error) {
+    node.textContent = `Key metadata unavailable: ${error.code || error.message}`;
+  }
+}
+
+async function rotateVaultKey() {
+  const oldPassphrase = $("vault-rotate-old-passphrase")?.value || "";
+  const newPassphrase = $("vault-rotate-new-passphrase")?.value || "";
+  const confirmation = $("vault-rotate-confirm-passphrase")?.value || "";
+  if (!currentUser) return;
+  if (newPassphrase.length < 12 || newPassphrase !== confirmation) {
+    setText("vault-rotation-status", "Use a new passphrase of at least 12 characters and confirm it exactly.", true);
+    return;
+  }
+  if (oldPassphrase === newPassphrase) {
+    setText("vault-rotation-status", "Choose a different new passphrase.", true);
+    return;
+  }
+  const button = $("vault-rotate-key");
+  if (button) button.disabled = true;
+  try {
+    setText("vault-rotation-status", "Decrypting the current archive and re-encrypting it with a new key…");
+    const ref = doc(db, "patient_secure_vault", currentUser.uid);
+    const snapshot = await getDoc(ref);
+    if (!snapshot.exists()) throw new Error("No encrypted cloud archive exists to rotate.");
+    const current = snapshot.data();
+    const plaintext = await decryptJson(current, oldPassphrase);
+    const encrypted = await encryptJson(plaintext, newPassphrase);
+    if (encrypted.ciphertext.length > 850000) {
+      throw new Error("The re-encrypted archive exceeds the Firestore document limit. Download an encrypted local copy instead.");
+    }
+    const nextVersion = Math.max(1, Number(current.keyVersion || 1) + 1);
+    await setDoc(ref, {
+      userId: currentUser.uid,
+      ...encrypted,
+      formatVersion: 2,
+      keyVersion: nextVersion,
+      keyRotatedAt: serverTimestamp(),
+      encryptedAt: serverTimestamp()
+    });
+    $("vault-rotate-old-passphrase").value = "";
+    $("vault-rotate-new-passphrase").value = "";
+    $("vault-rotate-confirm-passphrase").value = "";
+    setText("vault-rotation-status", `Encryption key rotated successfully to version ${nextVersion}. The old passphrase will no longer decrypt the cloud archive.`);
+    await loadVaultKeyMetadata();
+  } catch (error) {
+    setText("vault-rotation-status", `Key rotation failed: ${error.code || error.message}. The existing archive was not intentionally deleted.`, true);
+  } finally {
+    if (button) button.disabled = false;
   }
 }
 
@@ -359,10 +435,11 @@ async function deletePatientAccount() {
       }
       await deleteDoc(conversation.ref);
     }
-    for (const name of ["symptom_logs", "blood_reports", "hydration_logs", "patient_reminders", "patient_medications", "chatbot_query_events", "chatbot_feedback"]) {
+    for (const name of ["symptom_logs", "blood_reports", "hydration_logs", "patient_reminders", "patient_medications", "chatbot_query_events", "chatbot_feedback", "patient_consent_records"]) {
       await deleteOwnedCollection(name, currentUser.uid);
     }
     await deleteDoc(doc(db, "patient_medical_history", currentUser.uid));
+    await deleteDoc(doc(db, "patient_privacy_preferences", currentUser.uid));
     await deleteDoc(doc(db, "patient_secure_vault", currentUser.uid));
     await deleteOfflineCopy().catch(() => {});
     await deleteDoc(doc(db, "users", currentUser.uid));
@@ -378,6 +455,7 @@ $("mfa-start-enrollment")?.addEventListener("click", beginMfaEnrollment);
 $("mfa-finish-enrollment")?.addEventListener("click", finishMfaEnrollment);
 $("vault-save")?.addEventListener("click", saveEncryptedVault);
 $("vault-restore")?.addEventListener("click", restoreEncryptedVault);
+$("vault-rotate-key")?.addEventListener("click", rotateVaultKey);
 $("offline-save")?.addEventListener("click", saveOfflineCopy);
 $("offline-unlock")?.addEventListener("click", unlockOfflineCopy);
 $("offline-delete")?.addEventListener("click", deleteOfflineCopy);
@@ -387,5 +465,6 @@ $("delete-account-button")?.addEventListener("click", deletePatientAccount);
 onAuthStateChanged(auth, user => {
   currentUser = user;
   if (user && $("mfa-enrolled-list")) renderMfaStatus();
+  if (user && $("vault-key-metadata")) loadVaultKeyMetadata();
   if (user && $("offline-account-email") && !$("offline-account-email").value) $("offline-account-email").value = user.email || "";
 });

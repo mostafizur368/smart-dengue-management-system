@@ -305,6 +305,16 @@
     <label for="vault-passphrase">Encryption passphrase</label><input id="vault-passphrase" type="password" minlength="12" autocomplete="new-password">
     <div class="form-actions"><button type="button" id="vault-save">Create / replace encrypted archive</button><button type="button" id="vault-restore" class="secondary">Decrypt and download archive</button></div>
     <p id="vault-status" class="status" role="status"></p>
+    <p id="vault-key-metadata" class="help">Loading encryption key metadata…</p>
+    <details class="advanced-card">
+      <summary><strong>Rotate encryption passphrase</strong></summary>
+      <p class="help">Enter the current passphrase and choose a new one. Rotation decrypts and re-encrypts this cloud archive in your browser. The offline IndexedDB copy is separate and must be saved again with the new passphrase if you want to rotate it too.</p>
+      <label for="vault-rotate-old-passphrase">Current passphrase</label><input id="vault-rotate-old-passphrase" type="password" autocomplete="current-password">
+      <label for="vault-rotate-new-passphrase">New passphrase (at least 12 characters)</label><input id="vault-rotate-new-passphrase" type="password" minlength="12" autocomplete="new-password">
+      <label for="vault-rotate-confirm-passphrase">Confirm new passphrase</label><input id="vault-rotate-confirm-passphrase" type="password" minlength="12" autocomplete="new-password">
+      <div class="form-actions"><button type="button" id="vault-rotate-key" class="secondary">Rotate encryption key</button></div>
+      <p id="vault-rotation-status" class="status" role="status"></p>
+    </details>
   </section>
 
   <section class="section" id="offline-records">
@@ -315,6 +325,16 @@
     <div class="form-actions"><button type="button" id="offline-save">Save encrypted offline copy</button><button type="button" id="offline-unlock" class="secondary">Unlock offline copy</button><button type="button" id="offline-delete" class="danger">Delete this device copy</button></div>
     <p id="offline-status" class="status" role="status"></p>
     <pre id="offline-preview" hidden style="max-height:300px;overflow:auto;white-space:pre-wrap"></pre>
+  </section>
+
+  <section class="section" id="patient-privacy-consent">
+    <div class="section-head"><div><h2>24 · Privacy & Consent Center</h2><p class="muted small">Choose whether your chatbot questions may be stored for optional service-improvement analytics.</p></div><span class="pill">Your choice · Off by default</span></div>
+    <div class="notice warning">If enabled, the text of your submitted chatbot questions may be stored with a match score and topic to improve the question bank. Chatbot answers and medical records are not added to this analytics event. Turning this off stops future question-event collection; it does not automatically erase older records.</div>
+    <label class="check" for="privacy-chatbot-analytics"><input type="checkbox" id="privacy-chatbot-analytics"> Allow optional chatbot question analytics</label>
+    <div class="form-actions"><button type="button" id="privacy-consent-save">Save my choice</button><button type="button" id="privacy-consent-refresh" class="secondary">Refresh consent history</button></div>
+    <p id="privacy-consent-status" class="status" role="status" aria-live="polite">Loading privacy preferences…</p>
+    <h3 style="margin-top:14px;">Recent consent history</h3>
+    <div id="privacy-consent-history" class="record-list"></div>
   </section>
 
   <section class="section" id="data-management">
@@ -355,6 +375,8 @@
 <script type="module" src="assets/js/patient-care-services.js"></script>
 <script type="module" src="assets/js/patient-messaging.js"></script>
 <script type="module" src="assets/js/patient-security-data.js"></script>
+<script type="module" src="assets/js/privacy-consent-center.js"></script>
+<script type="module" src="assets/js/security-session-panel.js"></script>
 <script src="assets/js/pwa-register.js"></script>
 </body>
 </html>

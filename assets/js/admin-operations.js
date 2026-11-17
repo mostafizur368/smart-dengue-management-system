@@ -1,3 +1,4 @@
+import { initializeAppCheckIfConfigured } from "./firebase-app-check.js";
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
@@ -13,6 +14,7 @@ const config = {
   appId: "1:164368465699:web:79fe552bea0b2bfc405696"
 };
 const app = getApps().length ? getApp() : initializeApp(config);
+initializeAppCheckIfConfigured(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const $ = id => document.getElementById(id);

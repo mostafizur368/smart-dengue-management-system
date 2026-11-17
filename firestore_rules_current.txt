@@ -8,13 +8,645 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
+    function isDoctor() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "doctor";
+    }
+
+    // Task 12: public users may submit a question for review; they cannot publish it.
+    match /question_suggestions/{suggestionId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'question', 'normalizedQuestion', 'language', 'status',
+          'submittedBy', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'question', 'normalizedQuestion', 'language', 'status',
+          'submittedBy', 'createdAt'
+        ])
+        && request.resource.data.question is string
+        && request.resource.data.question.size() >= 8
+        && request.resource.data.question.size() <= 300
+        && request.resource.data.normalizedQuestion is string
+        && request.resource.data.normalizedQuestion.size() >= 1
+        && request.resource.data.normalizedQuestion.size() <= 300
+        && request.resource.data.language in ['bn', 'en']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt is timestamp
+        && (
+          request.resource.data.submittedBy == null
+          || (
+            request.auth != null
+            && request.resource.data.submittedBy == request.auth.uid
+          )
+        );
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Only admins can publish reviewed Q&A. Public users can read approved entries.
+    match /community_question_bank/{questionId} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Task 11: users can submit explicit chatbot ratings; only admins can review them.
+    match /chatbot_feedback/{feedbackId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'question', 'answerPreview', 'matchedQuestion', 'rating', 'intent', 'matchScore',
+          'matchLevel', 'language', 'userId', 'createdAt', 'createdAtClient',
+          'feedbackReason', 'feedbackComment'
+        ])
+        && request.resource.data.keys().hasAll([
+          'question', 'answerPreview', 'rating', 'intent', 'matchScore',
+          'matchLevel', 'language', 'userId', 'createdAt', 'createdAtClient'
+        ])
+        && request.resource.data.question is string
+        && request.resource.data.question.size() <= 500
+        && request.resource.data.answerPreview is string
+        && request.resource.data.answerPreview.size() <= 400
+        && (
+          !request.resource.data.keys().hasAny(['matchedQuestion'])
+          || (
+            request.resource.data.matchedQuestion is string
+            && request.resource.data.matchedQuestion.size() <= 300
+          )
+        )
+        && request.resource.data.rating in ['helpful', 'not_helpful']
+        && request.resource.data.intent is string
+        && request.resource.data.intent.size() <= 80
+        && request.resource.data.matchScore is number
+        && request.resource.data.matchScore >= 0
+        && request.resource.data.matchScore <= 100
+        && request.resource.data.matchLevel in ['high', 'medium', 'low']
+        && request.resource.data.language in ['bn', 'en']
+        && (!request.resource.data.keys().hasAny(['feedbackReason']) || request.resource.data.feedbackReason in ['', 'inaccurate', 'irrelevant', 'unclear', 'outdated', 'safety_concern', 'other'])
+        && (!request.resource.data.keys().hasAny(['feedbackComment']) || (request.resource.data.feedbackComment is string && request.resource.data.feedbackComment.size() <= 300))
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAtClient is string
+        && request.resource.data.createdAtClient.size() <= 40
+        && (
+          request.resource.data.userId == null
+          || (
+            request.auth != null
+            && request.resource.data.userId == request.auth.uid
+          )
+        );
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+    }
+
+    // Task 14: a Not Helpful rating creates a review item. Only admins can review it.
+    match /chatbot_answer_issues/{issueId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'feedbackId', 'question', 'sourceQuestion', 'answerPreview',
+          'matchedAnswerBn', 'matchedAnswerEn', 'intent', 'matchScore',
+          'language', 'status', 'reporterUid', 'createdAt', 'createdAtClient',
+          'feedbackReason', 'feedbackComment'
+        ])
+        && request.resource.data.keys().hasAll([
+          'feedbackId', 'question', 'sourceQuestion', 'answerPreview',
+          'matchedAnswerBn', 'matchedAnswerEn', 'intent', 'matchScore',
+          'language', 'status', 'reporterUid', 'createdAt', 'createdAtClient'
+        ])
+        && request.resource.data.feedbackId is string
+        && request.resource.data.question is string
+        && request.resource.data.question.size() <= 500
+        && request.resource.data.sourceQuestion is string
+        && request.resource.data.sourceQuestion.size() <= 300
+        && request.resource.data.answerPreview is string
+        && request.resource.data.answerPreview.size() <= 400
+        && request.resource.data.matchedAnswerBn is string
+        && request.resource.data.matchedAnswerBn.size() <= 4000
+        && request.resource.data.matchedAnswerEn is string
+        && request.resource.data.matchedAnswerEn.size() <= 4000
+        && request.resource.data.intent is string
+        && request.resource.data.intent.size() <= 80
+        && request.resource.data.matchScore is number
+        && request.resource.data.matchScore >= 0
+        && request.resource.data.matchScore <= 100
+        && request.resource.data.language in ['bn', 'en']
+        && (!request.resource.data.keys().hasAny(['feedbackReason']) || request.resource.data.feedbackReason in ['', 'inaccurate', 'irrelevant', 'unclear', 'outdated', 'safety_concern', 'other'])
+        && (!request.resource.data.keys().hasAny(['feedbackComment']) || (request.resource.data.feedbackComment is string && request.resource.data.feedbackComment.size() <= 300))
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAtClient is string
+        && request.resource.data.createdAtClient.size() <= 40
+        && (
+          request.resource.data.reporterUid == null
+          || (
+            request.auth != null
+            && request.resource.data.reporterUid == request.auth.uid
+          )
+        );
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Approved corrections are public-read; only admins may publish or edit them.
+    match /chatbot_answer_overrides/{overrideId} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Immutable audit trail: admins can read and create version history.
+    match /chatbot_answer_correction_history/{historyId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Task 15: collect minimal chatbot usage events; only admins can read analytics.
+    match /chatbot_query_events/{eventId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'question', 'matchedQuestion', 'topic', 'matchScore', 'matchLevel',
+          'language', 'userId', 'createdAt', 'createdAtClient',
+          'isUnmatched', 'topMatchCount', 'contextUsed'
+        ])
+        && request.resource.data.keys().hasAll([
+          'question', 'matchedQuestion', 'topic', 'matchScore', 'matchLevel',
+          'language', 'userId', 'createdAt', 'createdAtClient'
+        ])
+        && request.resource.data.question is string
+        && request.resource.data.question.size() <= 500
+        && request.resource.data.matchedQuestion is string
+        && request.resource.data.matchedQuestion.size() <= 300
+        && request.resource.data.topic is string
+        && request.resource.data.topic.size() <= 80
+        && request.resource.data.matchScore is number
+        && request.resource.data.matchScore >= 0
+        && request.resource.data.matchScore <= 100
+        && request.resource.data.matchLevel in ['high', 'medium', 'low']
+        && request.resource.data.language in ['bn', 'en']
+        && (!request.resource.data.keys().hasAny(['isUnmatched']) || request.resource.data.isUnmatched is bool)
+        && (!request.resource.data.keys().hasAny(['topMatchCount']) || (request.resource.data.topMatchCount is int && request.resource.data.topMatchCount >= 0 && request.resource.data.topMatchCount <= 15))
+        && (!request.resource.data.keys().hasAny(['contextUsed']) || request.resource.data.contextUsed is bool)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAtClient is string
+        && request.resource.data.createdAtClient.size() <= 40
+        && (
+          request.resource.data.userId == null
+          || (
+            request.auth != null
+            && request.resource.data.userId == request.auth.uid
+          )
+        );
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if false;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Task 16: Admin-managed knowledge-base overlays.
+    // Public chatbot can read only active/deleted overlay documents; only admins can write.
+    // Task 17: Admin-only bulk-import batch history.
+    match /chatbot_import_batches/{batchId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    // Task 19: immutable Admin-only question version history.
+    match /chatbot_question_versions/{versionId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Task 23: Admin-only daily/manual Question Bank backups.
+    match /chatbot_question_bank_backups/{backupId} {
+      allow read, create, update, delete: if isAdmin();
+
+      match /chunks/{chunkId} {
+        allow read, create, update, delete: if isAdmin();
+      }
+    }
+
+    // Task 32 + 36: active medical source links are public-read; only Admins manage the registry.
+    match /medical_sources/{sourceId} {
+      allow read: if resource.data.status == 'active' || isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 180
+        && request.resource.data.organization is string
+        && request.resource.data.organization.size() <= 120
+        && request.resource.data.url is string
+        && request.resource.data.url.size() <= 500
+        && request.resource.data.url.matches('https://.*')
+        && request.resource.data.topics is list
+        && request.resource.data.topics.size() <= 10;
+      allow delete: if isAdmin();
+    }
+
+    // Task 37: clinician reviews are append-only in content; reviewers may update only their decision fields.
+    match /chatbot_clinical_reviews/{reviewId} {
+      function isAssignedClinicalReviewer() {
+        return request.auth != null
+          && resource.data.assignedReviewerUid == request.auth.uid
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicalReviewer == true
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['doctor', 'clinician'];
+      }
+
+      allow create: if isAdmin()
+        && request.resource.data.sourceEntryId is string
+        && request.resource.data.sourceEntryId.size() <= 180
+        && request.resource.data.sourceQuestion is string
+        && request.resource.data.sourceQuestion.size() <= 500
+        && request.resource.data.answerBn is string
+        && request.resource.data.answerBn.size() <= 6000
+        && request.resource.data.answerEn is string
+        && request.resource.data.answerEn.size() <= 6000
+        && request.resource.data.answerFingerprint is string
+        && request.resource.data.assignedReviewerUid is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.sourceIds is list
+        && request.resource.data.sourceIds.size() <= 10
+        && request.resource.data.createdAt is timestamp;
+      allow read: if isAdmin() || resource.data.status == 'approved' || isAssignedClinicalReviewer();
+      allow update: if isAdmin() || (
+        isAssignedClinicalReviewer()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'reviewDecision', 'reviewerNotes', 'reviewedSourceIds',
+          'reviewerUid', 'reviewerName', 'reviewedAt', 'reviewedAtClient', 'reviewDueAt'
+        ])
+        && request.resource.data.assignedReviewerUid == resource.data.assignedReviewerUid
+        && request.resource.data.reviewerUid == request.auth.uid
+        && request.resource.data.status in ['approved', 'needs_revision', 'rejected']
+        && request.resource.data.reviewDecision == request.resource.data.status
+        && request.resource.data.reviewerNotes is string
+        && request.resource.data.reviewerNotes.size() >= 10
+        && request.resource.data.reviewerNotes.size() <= 2000
+        && request.resource.data.reviewedSourceIds is list
+        && request.resource.data.reviewedSourceIds.size() <= 10
+        && (request.resource.data.status != 'approved' || request.resource.data.reviewedSourceIds.size() >= 1)
+        && request.resource.data.reviewedAt is timestamp
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /chatbot_admin_question_bank/{entryId} {
+      allow read: if isAdmin()
+        || resource.data.status in ['active', 'deleted'];
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Task 50: append-only Admin activity audit trail.
+    // Entries can be created/read only by authenticated Admins; no edits or deletes.
+    match /admin_activity_logs/{logId} {
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'actorUid', 'actorEmail', 'action', 'targetType', 'targetId',
+          'summary', 'createdAt', 'createdAtClient'
+        ])
+        && request.resource.data.keys().hasAll([
+          'actorUid', 'actorEmail', 'action', 'targetType', 'targetId',
+          'summary', 'createdAt', 'createdAtClient'
+        ])
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.actorEmail is string
+        && request.resource.data.actorEmail.size() <= 200
+        && request.resource.data.action is string
+        && request.resource.data.action.size() >= 1
+        && request.resource.data.action.size() <= 80
+        && request.resource.data.targetType is string
+        && request.resource.data.targetType.size() <= 60
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() <= 180
+        && request.resource.data.summary is string
+        && request.resource.data.summary.size() <= 500
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAtClient is string
+        && request.resource.data.createdAtClient.size() <= 40;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // Tasks 54-58: private patient-owned health records.
+    // Doctors and Admins do not receive automatic access. A future patient-consent
+    // workflow must be added before any clinician can read these collections.
+    match /symptom_logs/{logId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'userId', 'logDate', 'temperatureC', 'symptoms', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'logDate', 'temperatureC', 'symptoms', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.logDate is string
+        && request.resource.data.logDate.size() == 10
+        && (request.resource.data.temperatureC == null
+          || (request.resource.data.temperatureC is number
+            && request.resource.data.temperatureC >= 34
+            && request.resource.data.temperatureC <= 43))
+        && request.resource.data.symptoms is list
+        && request.resource.data.symptoms.size() <= 30
+        && request.resource.data.symptoms.hasOnly([
+          'fever', 'headache', 'eye-pain', 'body-joint-pain', 'rash',
+          'nausea', 'repeated-vomiting', 'severe-abdominal-pain', 'bleeding',
+          'breathing-difficulty', 'unusual-drowsiness', 'cold-clammy-skin',
+          'reduced-urination', 'rapid-breathing', 'fainting', 'blood-vomit-stool',
+          'fluid-accumulation', 'marked-restlessness', 'pale-cold-skin',
+          'very-thirsty', 'liver-enlargement'
+        ])
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 1000
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.keys().hasOnly([
+          'userId', 'logDate', 'temperatureC', 'symptoms', 'notes',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.logDate is string
+        && request.resource.data.logDate.size() == 10
+        && (request.resource.data.temperatureC == null
+          || (request.resource.data.temperatureC is number
+            && request.resource.data.temperatureC >= 34
+            && request.resource.data.temperatureC <= 43))
+        && request.resource.data.symptoms is list
+        && request.resource.data.symptoms.size() <= 30
+        && request.resource.data.symptoms.hasOnly([
+          'fever', 'headache', 'eye-pain', 'body-joint-pain', 'rash',
+          'nausea', 'repeated-vomiting', 'severe-abdominal-pain', 'bleeding',
+          'breathing-difficulty', 'unusual-drowsiness', 'cold-clammy-skin',
+          'reduced-urination', 'rapid-breathing', 'fainting', 'blood-vomit-stool',
+          'fluid-accumulation', 'marked-restlessness', 'pale-cold-skin',
+          'very-thirsty', 'liver-enlargement'
+        ])
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 1000
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    match /blood_reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'userId', 'reportDate', 'labName', 'plateletCount', 'hematocrit',
+          'wbcCount', 'hemoglobin', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'reportDate', 'labName', 'plateletCount', 'hematocrit',
+          'wbcCount', 'hemoglobin', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.reportDate is string
+        && request.resource.data.reportDate.size() == 10
+        && request.resource.data.labName is string
+        && request.resource.data.labName.size() <= 100
+        && (request.resource.data.plateletCount == null
+          || (request.resource.data.plateletCount is number
+            && request.resource.data.plateletCount >= 0
+            && request.resource.data.plateletCount <= 2000))
+        && (request.resource.data.hematocrit == null
+          || (request.resource.data.hematocrit is number
+            && request.resource.data.hematocrit >= 0
+            && request.resource.data.hematocrit <= 80))
+        && (request.resource.data.wbcCount == null
+          || (request.resource.data.wbcCount is number
+            && request.resource.data.wbcCount >= 0
+            && request.resource.data.wbcCount <= 100))
+        && (request.resource.data.hemoglobin == null
+          || (request.resource.data.hemoglobin is number
+            && request.resource.data.hemoglobin >= 0
+            && request.resource.data.hemoglobin <= 30))
+        && (request.resource.data.plateletCount != null
+          || request.resource.data.hematocrit != null
+          || request.resource.data.wbcCount != null
+          || request.resource.data.hemoglobin != null)
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 1000
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.keys().hasOnly([
+          'userId', 'reportDate', 'labName', 'plateletCount', 'hematocrit',
+          'wbcCount', 'hemoglobin', 'notes', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.reportDate is string
+        && request.resource.data.reportDate.size() == 10
+        && request.resource.data.labName is string
+        && request.resource.data.labName.size() <= 100
+        && (request.resource.data.plateletCount == null
+          || (request.resource.data.plateletCount is number
+            && request.resource.data.plateletCount >= 0
+            && request.resource.data.plateletCount <= 2000))
+        && (request.resource.data.hematocrit == null
+          || (request.resource.data.hematocrit is number
+            && request.resource.data.hematocrit >= 0
+            && request.resource.data.hematocrit <= 80))
+        && (request.resource.data.wbcCount == null
+          || (request.resource.data.wbcCount is number
+            && request.resource.data.wbcCount >= 0
+            && request.resource.data.wbcCount <= 100))
+        && (request.resource.data.hemoglobin == null
+          || (request.resource.data.hemoglobin is number
+            && request.resource.data.hemoglobin >= 0
+            && request.resource.data.hemoglobin <= 30))
+        && (request.resource.data.plateletCount != null
+          || request.resource.data.hematocrit != null
+          || request.resource.data.wbcCount != null
+          || request.resource.data.hemoglobin != null)
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 1000
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    match /hydration_logs/{logId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'userId', 'dateKey', 'fluidType', 'amountMl', 'loggedAt',
+          'note', 'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'dateKey', 'fluidType', 'amountMl', 'loggedAt',
+          'note', 'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.dateKey is string
+        && request.resource.data.dateKey.size() == 10
+        && request.resource.data.fluidType in [
+          'water', 'oral-rehydration-solution', 'soup', 'other'
+        ]
+        && request.resource.data.amountMl is int
+        && request.resource.data.amountMl >= 1
+        && request.resource.data.amountMl <= 5000
+        && request.resource.data.loggedAt is string
+        && request.resource.data.loggedAt.size() >= 10
+        && request.resource.data.loggedAt.size() <= 40
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 300
+        && request.resource.data.createdAt is timestamp;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /patient_reminders/{reminderId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'userId', 'title', 'category', 'dueAt', 'notes',
+          'completed', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'title', 'category', 'dueAt', 'notes',
+          'completed', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.category in [
+          'doctor-visit', 'lab-test', 'follow-up', 'other'
+        ]
+        && request.resource.data.dueAt is string
+        && request.resource.data.dueAt.size() >= 20
+        && request.resource.data.dueAt.size() <= 40
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 500
+        && request.resource.data.completed is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.keys().hasOnly([
+          'userId', 'title', 'category', 'dueAt', 'notes',
+          'completed', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.category in [
+          'doctor-visit', 'lab-test', 'follow-up', 'other'
+        ]
+        && request.resource.data.dueAt is string
+        && request.resource.data.dueAt.size() >= 20
+        && request.resource.data.dueAt.size() <= 40
+        && request.resource.data.notes is string
+        && request.resource.data.notes.size() <= 500
+        && request.resource.data.completed is bool
+        && request.resource.data.updatedAt is timestamp;
+    }
+
+    // Task 68: private medical history. No automatic Doctor or Admin access.
+    match /patient_medical_history/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'userId', 'conditions', 'allergies', 'notes', 'emergencyContact', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'conditions', 'allergies', 'notes', 'emergencyContact', 'updatedAt'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.conditions is string && request.resource.data.conditions.size() <= 1500
+        && request.resource.data.allergies is string && request.resource.data.allergies.size() <= 1000
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 1500
+        && request.resource.data.emergencyContact is string && request.resource.data.emergencyContact.size() <= 80
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Task 70: patient-entered reminders for clinician-prescribed medicines only.
+    match /patient_medications/{medicationId} {
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'userId', 'name', 'dose', 'schedule', 'notes', 'nextReminderAt',
+          'active', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'name', 'dose', 'schedule', 'notes', 'nextReminderAt',
+          'active', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 100
+        && request.resource.data.dose is string && request.resource.data.dose.size() >= 1 && request.resource.data.dose.size() <= 120
+        && request.resource.data.schedule is string && request.resource.data.schedule.size() >= 1 && request.resource.data.schedule.size() <= 120
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 400
+        && request.resource.data.nextReminderAt is string && request.resource.data.nextReminderAt.size() >= 20 && request.resource.data.nextReminderAt.size() <= 40
+        && request.resource.data.active is bool
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'updatedAt'])
+        && request.resource.data.active is bool
+        && request.resource.data.updatedAt is timestamp;
+    }
+
     match /contact_messages/{document} {
-      allow create: if true;
+      // Public contact submissions remain available without an account, but their schema is bounded.
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'message', 'timestamp'])
+        && request.resource.data.keys().hasAll(['name', 'email', 'message', 'timestamp'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 3
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 1
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.timestamp is timestamp;
       allow read, update, delete: if isAdmin();
     }
 
     match /symptom_checks/{document} {
-      allow create: if true;
+      // Anonymous symptom checks are intentionally supported; validate every submitted field.
+      allow create: if request.resource.data.keys().hasOnly([
+          'fever', 'headache', 'joint', 'rash', 'nausea', 'selectedSymptoms',
+          'symptomCount', 'riskLevel', 'timestamp'
+        ])
+        && request.resource.data.keys().hasAll([
+          'fever', 'headache', 'joint', 'rash', 'nausea', 'selectedSymptoms',
+          'symptomCount', 'riskLevel', 'timestamp'
+        ])
+        && request.resource.data.fever is bool
+        && request.resource.data.headache is bool
+        && request.resource.data.joint is bool
+        && request.resource.data.rash is bool
+        && request.resource.data.nausea is bool
+        && request.resource.data.selectedSymptoms is list
+        && request.resource.data.selectedSymptoms.size() <= 5
+        && request.resource.data.selectedSymptoms.toSet().hasOnly([
+          'High Fever', 'Severe Headache', 'Muscle & Joint Pain', 'Skin Rash', 'Nausea & Vomiting'
+        ])
+        && request.resource.data.fever == request.resource.data.selectedSymptoms.hasAny(['High Fever'])
+        && request.resource.data.headache == request.resource.data.selectedSymptoms.hasAny(['Severe Headache'])
+        && request.resource.data.joint == request.resource.data.selectedSymptoms.hasAny(['Muscle & Joint Pain'])
+        && request.resource.data.rash == request.resource.data.selectedSymptoms.hasAny(['Skin Rash'])
+        && request.resource.data.nausea == request.resource.data.selectedSymptoms.hasAny(['Nausea & Vomiting'])
+        && request.resource.data.symptomCount is int
+        && request.resource.data.symptomCount >= 0
+        && request.resource.data.symptomCount <= 5
+        && request.resource.data.selectedSymptoms.size() == request.resource.data.symptomCount
+        && request.resource.data.symptomCount == (
+          (request.resource.data.fever ? 1 : 0)
+          + (request.resource.data.headache ? 1 : 0)
+          + (request.resource.data.joint ? 1 : 0)
+          + (request.resource.data.rash ? 1 : 0)
+          + (request.resource.data.nausea ? 1 : 0)
+        )
+        && (
+          (request.resource.data.symptomCount == 0 && request.resource.data.riskLevel == 'No Symptoms')
+          || (request.resource.data.symptomCount >= 1 && request.resource.data.symptomCount <= 2 && request.resource.data.riskLevel == 'Low Risk')
+          || (request.resource.data.symptomCount >= 3 && request.resource.data.symptomCount <= 4 && request.resource.data.riskLevel == 'Medium Risk')
+          || (request.resource.data.symptomCount == 5 && request.resource.data.riskLevel == 'High Risk')
+        )
+        && request.resource.data.timestamp is timestamp;
       allow read, update, delete: if isAdmin();
     }
 
@@ -24,25 +656,81 @@ service cloud.firestore {
           && resource.data.userId == request.auth.uid;
       }
       function isAssignedDoctor() {
-        return request.auth != null
-          && resource.data.doctorUid == request.auth.uid;
+        return isDoctor()
+          && resource.data.doctorUid == request.auth.uid
+          && exists(/databases/$(database)/documents/public_doctors/$(request.auth.uid))
+          && get(/databases/$(database)/documents/public_doctors/$(request.auth.uid)).data.status == 'approved';
       }
       allow read: if isAdmin() || isOwner() || isAssignedDoctor();
       allow create: if request.auth != null
-        && request.resource.data.userId == request.auth.uid;
+        && request.resource.data.keys().hasOnly([
+          'userId', 'patientName', 'patientPhone', 'doctorName', 'doctorUid',
+          'appointmentTime', 'doctorId', 'appointmentDate', 'status', 'timestamp'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'patientName', 'patientPhone', 'doctorName', 'doctorUid',
+          'appointmentTime', 'doctorId', 'appointmentDate', 'status', 'timestamp'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.patientName is string
+        && request.resource.data.patientName.size() >= 1
+        && request.resource.data.patientName.size() <= 120
+        && request.resource.data.patientPhone is string
+        && request.resource.data.patientPhone.size() >= 5
+        && request.resource.data.patientPhone.size() <= 30
+        && request.resource.data.doctorName is string
+        && request.resource.data.doctorName.size() >= 1
+        && request.resource.data.doctorName.size() <= 160
+        && (
+          request.resource.data.doctorUid == null
+          || (
+            request.resource.data.doctorUid is string
+            && exists(/databases/$(database)/documents/users/$(request.resource.data.doctorUid))
+            && get(/databases/$(database)/documents/users/$(request.resource.data.doctorUid)).data.role == 'doctor'
+            && exists(/databases/$(database)/documents/public_doctors/$(request.resource.data.doctorUid))
+            && get(/databases/$(database)/documents/public_doctors/$(request.resource.data.doctorUid)).data.status == 'approved'
+          )
+        )
+        && request.resource.data.doctorId is string
+        && request.resource.data.doctorId.size() >= 1
+        && request.resource.data.doctorId.size() <= 128
+        && request.resource.data.appointmentDate is string
+        && request.resource.data.appointmentDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && request.resource.data.appointmentTime is string
+        && request.resource.data.appointmentTime.matches('^(?:[01]\\d|2[0-3]):[0-5]\\d$')
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.timestamp is timestamp;
       allow update: if isAdmin()
         || (isAssignedDoctor()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
-      allow delete: if isAdmin();
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['Pending', 'Accepted', 'Rejected']);
+      allow delete: if isAdmin() || (
+        isOwner()
+        && resource.data.status in ['Pending', 'pending', 'Rejected', 'rejected', 'Cancelled', 'cancelled', 'canceled']
+      );
     }
 
     match /users/{userId} {
       allow create: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.role == "user";
+        && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'createdAt'])
+        && request.resource.data.keys().hasAll(['name', 'email', 'role', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 3
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.role == "user"
+        && request.resource.data.createdAt is timestamp;
       allow read: if request.auth != null
         && (request.auth.uid == userId || isAdmin());
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (
+        request.auth != null
+        && request.auth.uid == userId
+        && resource.data.role == "user"
+      );
     }
 
     match /doctor_applications/{applicationId} {
@@ -51,19 +739,280 @@ service cloud.firestore {
 
     match /public_doctors/{doctorId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isDoctor()
+        && request.auth.uid == doctorId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['schedule', 'scheduleUpdatedAt'])
+        && request.resource.data.schedule is map
+        && request.resource.data.schedule.keys().hasOnly(['days', 'startTime', 'endTime', 'dailyTicketLimit'])
+        && request.resource.data.schedule.days is string
+        && request.resource.data.schedule.days.size() >= 3
+        && request.resource.data.schedule.days.size() <= 100
+        && request.resource.data.schedule.startTime is string
+        && request.resource.data.schedule.startTime.matches('^(?:[01]\\d|2[0-3]):[0-5]\\d$')
+        && request.resource.data.schedule.endTime is string
+        && request.resource.data.schedule.endTime.matches('^(?:[01]\\d|2[0-3]):[0-5]\\d$')
+        && request.resource.data.schedule.dailyTicketLimit is int
+        && request.resource.data.schedule.dailyTicketLimit >= 1
+        && request.resource.data.schedule.dailyTicketLimit <= 30
+        && request.resource.data.scheduleUpdatedAt is timestamp
+      );
+    }
+
+    // Task 76: Admin-maintained public hospital directory.
+    match /public_hospitals/{hospitalId} {
+      allow read: if resource.data.status == 'active' || isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 160
+        && request.resource.data.address is string
+        && request.resource.data.address.size() >= 5
+        && request.resource.data.address.size() <= 300
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() <= 40
+        && request.resource.data.city is string
+        && request.resource.data.city.size() <= 100
+        && request.resource.data.status in ['active', 'inactive']
+        && request.resource.data.emergencyServices is bool
+        && (request.resource.data.lat == null || (request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90))
+        && (request.resource.data.lng == null || (request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180));
+      allow delete: if isAdmin();
+    }
+
+    // Task 85: append-only doctor activity records; Admin can monitor.
+    match /doctor_activity_logs/{logId} {
+      allow create: if isDoctor()
+        && request.resource.data.keys().hasOnly(['doctorUid', 'action', 'summary', 'createdAt', 'createdAtClient'])
+        && request.resource.data.keys().hasAll(['doctorUid', 'action', 'summary', 'createdAt', 'createdAtClient'])
+        && request.resource.data.doctorUid == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.action.size() >= 1
+        && request.resource.data.action.size() <= 80
+        && request.resource.data.summary is string
+        && request.resource.data.summary.size() <= 300
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAtClient is string
+        && request.resource.data.createdAtClient.size() <= 40;
+      allow read: if isAdmin() || (isDoctor() && resource.data.doctorUid == request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    // Task 78: participant-only doctor/patient conversations.
+    match /doctor_patient_conversations/{conversationId} {
+      function isParticipant() {
+        return request.auth != null
+          && resource.data.participants is list
+          && resource.data.participants.hasAny([request.auth.uid]);
+      }
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'patientUid', 'doctorUid', 'participants', 'patientDisplayName',
+          'doctorDisplayName', 'status', 'lastMessagePreview', 'createdAt', 'lastMessageAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'patientUid', 'doctorUid', 'participants', 'patientDisplayName',
+          'doctorDisplayName', 'status', 'lastMessagePreview', 'createdAt', 'lastMessageAt'
+        ])
+        && request.resource.data.patientUid == request.auth.uid
+        && request.resource.data.doctorUid is string
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.resource.data.participants.hasAll([request.auth.uid, request.resource.data.doctorUid])
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.doctorUid))
+        && get(/databases/$(database)/documents/users/$(request.resource.data.doctorUid)).data.role == 'doctor'
+        && exists(/databases/$(database)/documents/public_doctors/$(request.resource.data.doctorUid))
+        && get(/databases/$(database)/documents/public_doctors/$(request.resource.data.doctorUid)).data.status == 'approved'
+        && get(/databases/$(database)/documents/public_doctors/$(request.resource.data.doctorUid)).data.chatbotVerified == true
+        && request.resource.data.status == 'open'
+        && request.resource.data.patientDisplayName is string
+        && request.resource.data.patientDisplayName.size() <= 120
+        && request.resource.data.doctorDisplayName is string
+        && request.resource.data.doctorDisplayName.size() <= 120
+        && request.resource.data.lastMessagePreview == ''
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.lastMessageAt is timestamp;
+      allow read: if isAdmin() || isParticipant()
+        || (request.auth != null && resource.data.patientUid == request.auth.uid)
+        || (request.auth != null && resource.data.doctorUid == request.auth.uid);
+      allow update: if (isParticipant() || isAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessagePreview', 'lastMessageAt'])
+        && request.resource.data.lastMessagePreview is string
+        && request.resource.data.lastMessagePreview.size() <= 120
+        && request.resource.data.lastMessageAt is timestamp;
+      allow delete: if isAdmin() || (request.auth != null && resource.data.patientUid == request.auth.uid);
+
+      match /messages/{messageId} {
+        function parentConversation() {
+          return get(/databases/$(database)/documents/doctor_patient_conversations/$(conversationId));
+        }
+        function parentParticipant() {
+          return request.auth != null
+            && parentConversation().data.participants.hasAny([request.auth.uid]);
+        }
+        allow create: if parentParticipant()
+          && request.resource.data.keys().hasOnly(['senderUid', 'text', 'createdAt'])
+          && request.resource.data.keys().hasAll(['senderUid', 'text', 'createdAt'])
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.createdAt is timestamp;
+        allow read: if parentParticipant() || isAdmin();
+        allow delete: if request.auth != null
+          && parentConversation().data.patientUid == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    // Task 87: encrypted patient archive; only ciphertext is stored here.
+    match /patient_secure_vault/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'userId', 'algorithm', 'kdf', 'iterations', 'salt', 'iv',
+          'ciphertext', 'encryptedAt', 'formatVersion', 'keyVersion', 'keyRotatedAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'userId', 'algorithm', 'kdf', 'iterations', 'salt', 'iv',
+          'ciphertext', 'encryptedAt', 'formatVersion'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.algorithm == 'AES-GCM-256'
+        && request.resource.data.kdf == 'PBKDF2-SHA-256'
+        && request.resource.data.iterations == 310000
+        && request.resource.data.salt is string && request.resource.data.salt.size() <= 64
+        && request.resource.data.iv is string && request.resource.data.iv.size() <= 64
+        && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() <= 850000
+        && request.resource.data.encryptedAt is timestamp
+        && request.resource.data.formatVersion in [1, 2]
+        && (!('keyVersion' in request.resource.data.keys())
+          || (request.resource.data.keyVersion is int && request.resource.data.keyVersion >= 1 && request.resource.data.keyVersion <= 10000))
+        && (!('keyRotatedAt' in request.resource.data.keys())
+          || request.resource.data.keyRotatedAt is timestamp);
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Batch 24: privacy preference and append-only consent history.
+    match /patient_privacy_preferences/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['userId', 'optionalChatbotAnalytics', 'policyVersion', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['userId', 'optionalChatbotAnalytics', 'policyVersion', 'updatedAt'])
+        && request.resource.data.userId == userId
+        && request.resource.data.optionalChatbotAnalytics is bool
+        && request.resource.data.policyVersion == 1
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /patient_consent_records/{consentId} {
+      allow read, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['userId', 'purpose', 'decision', 'policyVersion', 'source', 'createdAt'])
+        && request.resource.data.keys().hasAll(['userId', 'purpose', 'decision', 'policyVersion', 'source', 'createdAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.purpose == 'chatbot_analytics'
+        && request.resource.data.decision in ['granted', 'withdrawn']
+        && request.resource.data.policyVersion == 1
+        && request.resource.data.source == 'patient_dashboard'
+        && request.resource.data.createdAt is timestamp;
+      allow update: if false;
+    }
+
+    // Batch 23/26/28: operational records are written only by trusted Cloud Functions.
+    match /system_backup_runs/{runId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /system_health_checks/{checkId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /security_incidents/{incidentId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /security_incident_events/{eventId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /operations_rate_limits/{limitId} {
+      allow read, create, update, delete: if false;
     }
 
     match /ticket_counts/{countId} {
+      function matchingAppointmentAfterWrite() {
+        let appointmentPath = /databases/$(database)/documents/appointments/$(request.resource.data.lastAppointmentId);
+        return request.resource.data.lastAppointmentId is string
+          && request.resource.data.lastAppointmentId.size() >= 1
+          && !exists(appointmentPath)
+          && existsAfter(appointmentPath)
+          && getAfter(appointmentPath).data.userId == request.auth.uid
+          && getAfter(appointmentPath).data.doctorId == request.resource.data.doctorId
+          && getAfter(appointmentPath).data.appointmentDate == request.resource.data.appointmentDate;
+      }
       allow read: if true;
-      allow create, update: if request.auth != null
+      // The counter update and matching appointment must be committed atomically in one transaction.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['doctorId', 'appointmentDate', 'booked', 'total', 'updatedAt', 'lastAppointmentId'])
+        && request.resource.data.keys().hasAll(['doctorId', 'appointmentDate', 'booked', 'total', 'updatedAt', 'lastAppointmentId'])
         && request.resource.data.booked is int
-        && request.resource.data.booked >= 0
-        && request.resource.data.booked <= 30
-        && request.resource.data.total == 30
+        && request.resource.data.booked == 1
+        && request.resource.data.total is int
+        && request.resource.data.total >= 1
+        && request.resource.data.total <= 30
+        && request.resource.data.booked <= request.resource.data.total
         && request.resource.data.doctorId is string
-        && request.resource.data.appointmentDate is string;
+        && request.resource.data.doctorId.size() >= 1
+        && request.resource.data.doctorId.size() <= 128
+        && request.resource.data.appointmentDate is string
+        && request.resource.data.appointmentDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && countId == request.resource.data.doctorId + '_' + request.resource.data.appointmentDate
+        && request.resource.data.updatedAt is timestamp
+        && matchingAppointmentAfterWrite();
+      allow update: if request.auth != null
+        && resource.data.booked is int
+        && resource.data.total is int
+        && resource.data.total >= 1
+        && resource.data.total <= 30
+        && resource.data.booked < resource.data.total
+        && request.resource.data.booked == resource.data.booked + 1
+        && request.resource.data.total == resource.data.total
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.appointmentDate == resource.data.appointmentDate
+        && countId == request.resource.data.doctorId + '_' + request.resource.data.appointmentDate
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'updatedAt', 'lastAppointmentId'])
+        && request.resource.data.updatedAt is timestamp
+        && matchingAppointmentAfterWrite();
       allow delete: if isAdmin();
+    }
+
+    // Batch 11 Tasks 94–98: security records are written only by trusted Cloud Functions.
+    match /security_sessions/{sessionId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /security_events/{eventId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /security_alerts/{alertId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /security_rate_limits/{userId} {
+      allow read, create, update, delete: if false;
     }
   }
 }

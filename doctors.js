@@ -1,3 +1,4 @@
+import { initializeAppCheckIfConfigured } from "./assets/js/firebase-app-check.js";
 // =====================================
 // SMART DENGUE MANAGEMENT SYSTEM
 // DOCTOR LIST
@@ -19,11 +20,12 @@ const firebaseConfig = {
     projectId: "smart-dengue-management-system",
     storageBucket: "smart-dengue-management-system.firebasestorage.app",
     messagingSenderId: "164368465699",
-    appId: "1:79fe552bea0b2bfc405696"
+    appId: "1:164368465699:web:79fe552bea0b2bfc405696"
 };
 
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+initializeAppCheckIfConfigured(app);
 const db = getFirestore(app);
 const doctors = [];
 

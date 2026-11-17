@@ -755,6 +755,82 @@
     </div>
 </div>
 
+<div class="section" id="security-admin-dashboard">
+    <h2>🔐 93–98 · Security Operations Center</h2>
+    <p>Server-verified security events, registered browser sessions and automated risk signals. Alerts are indicators for review, not proof that an account was compromised.</p>
+    <button type="button" id="security-admin-refresh" style="padding:9px 12px;border:0;border-radius:7px;background:#087f8c;color:white;">Refresh Security Overview</button>
+    <p id="security-admin-status" role="status" aria-live="polite">Waiting for the security service…</p>
+    <div id="security-admin-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0;"></div>
+    <h3>Open security alerts</h3>
+    <div id="security-admin-alerts" style="display:grid;gap:10px;"></div>
+    <h3 style="margin-top:20px;">Recently active sessions</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;"><th style="padding:8px;">User UID</th><th style="padding:8px;">Device</th><th style="padding:8px;">Last seen</th><th style="padding:8px;">Action</th></tr></thead>
+            <tbody id="security-admin-sessions"></tbody>
+        </table>
+    </div>
+    <h3 style="margin-top:20px;">Recent security events</h3>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;text-align:left;">
+            <thead><tr style="background:#475569;color:#fff;"><th style="padding:8px;">Time</th><th style="padding:8px;">User UID</th><th style="padding:8px;">Event</th><th style="padding:8px;">Severity</th><th style="padding:8px;">Summary</th></tr></thead>
+            <tbody id="security-admin-events"></tbody>
+        </table>
+    </div>
+    <p class="notice">Session revocation invalidates Firebase refresh tokens. Already-issued ID tokens may remain usable until expiry unless a protected backend verifies revocation; do not describe this as instantaneous termination of every existing Firestore client connection.</p>
+</div>
+
+<div class="section" id="reliability-operations-center">
+    <h2>22–28 · Reliability & Data Protection Center</h2>
+    <p>Backup integrity, Firebase health, patient privacy controls, encryption versioning and security incident response. These indicators reflect deployed services only; source code alone is not proof that a service is active.</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+        <button type="button" id="reliability-backup-refresh">Refresh backup history</button>
+        <button type="button" id="reliability-backup-run">Run full Firestore backup now</button>
+        <button type="button" id="reliability-backup-verify" disabled>Verify latest backup checksums</button>
+    </div>
+    <p id="reliability-backup-status" role="status">Loading backup status…</p>
+    <div id="reliability-backup-list" style="display:grid;gap:9px;"></div>
+
+    <h3 style="margin-top:22px;">26 · System Health Monitoring</h3>
+    <button type="button" id="reliability-health-refresh">Refresh system health</button>
+    <p id="reliability-health-status" role="status">Checking system health…</p>
+    <div id="reliability-health-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:10px 0;"></div>
+    <div id="reliability-health-history" style="display:grid;gap:7px;"></div>
+
+    <h3 style="margin-top:22px;">28 · Security Incident Response</h3>
+    <p class="notice">Never enter patient names, phone numbers, passwords, OTPs, Firebase tokens or medical details in incident descriptions. Use a separate authorized clinical workflow for patient-specific matters.</p>
+    <form id="incident-response-form" style="display:grid;gap:9px;max-width:760px;">
+        <label for="incident-response-title">Incident title</label>
+        <input id="incident-response-title" required minlength="5" maxlength="140">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;">
+            <div><label for="incident-response-category">Category</label>
+                <select id="incident-response-category">
+                    <option value="account_security">Account security</option>
+                    <option value="app_abuse">App abuse</option>
+                    <option value="data_privacy">Data privacy</option>
+                    <option value="backup_recovery">Backup / recovery</option>
+                    <option value="system_health">System health</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div><label for="incident-response-severity">Severity</label>
+                <select id="incident-response-severity">
+                    <option value="low">Low</option><option value="medium" selected>Medium</option>
+                    <option value="high">High</option><option value="critical">Critical</option>
+                </select>
+            </div>
+        </div>
+        <label for="incident-response-description">Description (no personal or medical data)</label>
+        <textarea id="incident-response-description" required minlength="10" maxlength="1800" rows="4"></textarea>
+        <button type="submit" id="incident-response-create">Create incident</button>
+    </form>
+    <p id="incident-response-status" role="status">Loading incident records…</p>
+    <div id="incident-response-list" style="display:grid;gap:9px;"></div>
+    <h4 style="margin-top:16px;">Incident event history</h4>
+    <div id="incident-response-history" style="display:grid;gap:5px;"></div>
+</div>
+
 <div id="admin-activity-section" class="section" id="admin-activity-log-section">
     <h2>🧾 Admin Activity Log</h2>
     <p>Question Bank, imports, clinical reviewer access, medical sources and system administration actions. Only Admins can view this audit trail.</p>
@@ -792,6 +868,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeAppCheckIfConfigured } from "../js/firebase-app-check.js";
         import {
             getAuth,
             onAuthStateChanged,
@@ -817,6 +894,7 @@ import {
      runTransaction,
      writeBatch
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { endCurrentSecuritySession, reportSecuritySignal } from "../js/security-client.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
@@ -829,6 +907,7 @@ import {
         };
 
         const app = initializeApp(firebaseConfig);
+        initializeAppCheckIfConfigured(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -3582,6 +3661,7 @@ const values = [
                     userSnap.data().role !== "admin"
                 ) {
                     alert("Access denied. Admin only.");
+                    await reportSecuritySignal("role_mismatch", { route: "admin-dashboard", code: "role_mismatch" });
                     await signOut(auth);
                     window.location.href = "../../index.html";
                     return;
@@ -3754,13 +3834,15 @@ await logAdminActivity("doctor_profile_created", "public_doctor", uid, `Created 
 
 // Logout
 document.getElementById("logout-btn").addEventListener("click", async () => {
-
+    try { await endCurrentSecuritySession(); } catch (securityError) { console.warn("Session close signal failed:", securityError); }
     await signOut(auth);
     window.location.href = "../../login.html";
 });
  
     </script>
     <script type="module" src="../../assets/js/admin-operations.js"></script>
+    <script type="module" src="../../assets/js/security-admin-panel.js"></script>
+    <script type="module" src="../../assets/js/reliability-admin-panel.js"></script>
     <script src="../../assets/js/pwa-register.js"></script>
     <link rel="manifest" href="../../manifest.webmanifest">
     <meta name="theme-color" content="#087f8c">

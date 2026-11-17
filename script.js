@@ -1,3 +1,4 @@
+import { initializeAppCheckIfConfigured } from "./assets/js/firebase-app-check.js";
 // ===============================
 // FIREBASE SETUP
 // ===============================
@@ -40,6 +41,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+initializeAppCheckIfConfigured(app);
 const auth = getAuth(app);
 // Initialize Firestore
 const db = getFirestore(app);

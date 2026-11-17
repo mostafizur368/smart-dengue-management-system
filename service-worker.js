@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-dengue-shell-v4-chatbot-ui";
+const CACHE_NAME = "smart-dengue-shell-v5-security-foundation";
 const APP_SHELL_PATHS = [
   "index.html",
   "user-dashboard.html",
@@ -15,6 +15,9 @@ const APP_SHELL_PATHS = [
   "assets/js/patient-care-services.js",
   "assets/js/patient-messaging.js",
   "assets/js/patient-security-data.js",
+  "assets/js/security-client.js",
+  "assets/js/security-session-panel.js",
+  "assets/js/security-admin-panel.js",
   "assets/js/doctor-portal.js",
   "assets/js/doctor-messaging.js",
   "assets/js/admin-operations.js",

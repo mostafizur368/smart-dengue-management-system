@@ -62,8 +62,11 @@ check("Mobile layout keeps the input controls responsive",
   css.includes("@media (max-width: 600px)") &&
   css.includes("width: calc(100vw - 16px)") &&
   css.includes("#chatbot-input {"));
-check("PWA cache version is bumped so clients refresh the new chatbot UI",
-  sw.includes('const CACHE_NAME = "smart-dengue-shell-v4-chatbot-ui";'));
+check("PWA cache version is bumped and includes Batch 11 security modules",
+  sw.includes('const CACHE_NAME = "smart-dengue-shell-v5-security-foundation";') &&
+  sw.includes('"assets/js/security-client.js"') &&
+  sw.includes('"assets/js/security-session-panel.js"') &&
+  sw.includes('"assets/js/security-admin-panel.js"'));
 
 const failed = checks.filter(([, ok]) => !ok);
 for (const [name, ok] of checks) console.log(`${ok ? "PASS" : "FAIL"} | ${name}`);

@@ -7,11 +7,12 @@ const frontend = fs.readFileSync(path.join(root, "assets/js/script.js"), "utf8")
 const css = fs.readFileSync(path.join(root, "assets/css/style.css"), "utf8");
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const checks = [
-  ["No unrestricted public write rule; public reads are limited to doctor directory and ticket counts", 
+  ["Public submissions are schema-bounded; public reads are limited to doctor directory and ticket counts",
     !/allow\s+(?:update|delete|write|read,\s*write)\s*:\s*if\s+true\s*;/i.test(rules) &&
-    (rules.match(/allow create:\s*if true;/g) || []).length === 2 &&
+    (rules.match(/allow create:\s*if true;/g) || []).length === 0 &&
     (rules.match(/allow read:\s*if true;/g) || []).length === 2 &&
-    rules.includes("match /contact_messages/{document}") && rules.includes("match /symptom_checks/{document}") &&
+    rules.includes("match /contact_messages/{document}") && rules.includes("request.resource.data.message.size() <= 2000") &&
+    rules.includes("match /symptom_checks/{document}") && rules.includes("selectedSymptoms.toSet().hasOnly") &&
     rules.includes("match /public_doctors/{doctorId}") && rules.includes("match /ticket_counts/{countId}")],
   ["Admin activity log is append-only", /match\s+\/admin_activity_logs\/\{logId\}[\s\S]*?allow\s+update,\s*delete\s*:\s*if\s+false/s.test(rules)],
   ["Admin dashboard enforces Admin role", admin.includes('userSnap.data().role !== "admin"')],

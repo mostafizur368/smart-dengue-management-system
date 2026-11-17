@@ -1,5 +1,7 @@
+import { initializeAppCheckIfConfigured } from "./firebase-app-check.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { endCurrentSecuritySession } from "./security-client.js";
 import {
   getFirestore, collection, doc, getDoc, getDocs, query, where, limit,
   addDoc, updateDoc, deleteDoc, serverTimestamp
@@ -16,6 +18,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+initializeAppCheckIfConfigured(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUser = null;
@@ -678,6 +681,7 @@ $("print-patient-summary").addEventListener("click", () => {
 $("refresh-dashboard").addEventListener("click", refreshDashboard);
 $("logout-btn").addEventListener("click", async () => {
   try {
+    try { await endCurrentSecuritySession(); } catch (securityError) { console.warn("Session close signal failed:", securityError); }
     await signOut(auth);
     window.location.href = "login.html";
   } catch (error) {

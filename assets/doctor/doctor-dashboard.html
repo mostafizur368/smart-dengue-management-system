@@ -155,6 +155,8 @@ import {
     getFirestore, collection, getDocs, doc, getDoc,
     updateDoc, query, where, serverTimestamp, addDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { initializeAppCheckIfConfigured } from "../../assets/js/firebase-app-check.js";
+import { endCurrentSecuritySession, reportSecuritySignal } from "../../assets/js/security-client.js";
     const firebaseConfig = {
         apiKey: "AIzaSyAnup3vd_NNkSKrhHtuZdQDJ0kuBZAci9o",
         authDomain: "smart-dengue-management-system.firebaseapp.com",
@@ -166,6 +168,7 @@ import {
     };
 
     const app = initializeApp(firebaseConfig);
+    initializeAppCheckIfConfigured(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
@@ -285,6 +288,7 @@ document.getElementById("doctor-hospital").textContent =
             if (!userSnap.exists() || (!["doctor", "admin"].includes(role) && !isClinicalReviewer)) {
                 message.textContent =
                     "Access denied. This page is for authorized doctors, clinical reviewers or admins only.";
+                await reportSecuritySignal("role_mismatch", { route: "doctor-dashboard", code: "role_mismatch" });
                 return;
             }
 
@@ -384,12 +388,14 @@ document.getElementById("doctor-hospital").textContent =
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
+        try { await endCurrentSecuritySession(); } catch (securityError) { console.warn("Session close signal failed:", securityError); }
         await signOut(auth);
         window.location.href = "../../login.html";
     });
 </script>
 <script type="module" src="../../assets/js/doctor-portal.js"></script>
 <script type="module" src="../../assets/js/doctor-messaging.js"></script>
+<script type="module" src="../../assets/js/security-session-panel.js"></script>
 <script src="../../assets/js/pwa-register.js"></script>
 </body>
 </html>

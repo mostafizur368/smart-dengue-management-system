@@ -153,6 +153,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeAppCheckIfConfigured } from "./assets/js/firebase-app-check.js";
+    import { startSecuritySession } from "./assets/js/security-client.js";
 
     import {
         getAuth,
@@ -178,6 +180,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    initializeAppCheckIfConfigured(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
@@ -220,6 +223,9 @@
                 role: "user",
                 createdAt: serverTimestamp()
             });
+
+            try { await startSecuritySession(user); }
+            catch (securityError) { console.warn("Security session registration is unavailable:", securityError); }
 
             message.textContent = "Registration successful! Redirecting to login...";
             message.style.color = "green";

@@ -39,7 +39,11 @@
     "test:task63-67": "node scripts/test-task63-67-batch6.js",
     "test:task68-72": "node scripts/test-task68-72-batch7.js",
     "test:task73-92": "node scripts/test-task73-92.js",
-    "test:chatbot-ui": "node scripts/test-chatbot-ui-layout.js"
+    "test:chatbot-ui": "node scripts/test-chatbot-ui-layout.js",
+    "audit:task93-98": "node scripts/test-task93-98-security.js",
+    "test:task93-98": "node scripts/test-task93-98-security.js",
+    "test:batch22-28": "node scripts/test-batch22-28.js",
+    "audit:batch22-28": "node scripts/test-batch22-28.js"
   },
   "keywords": [],
   "author": "",

@@ -1,3 +1,4 @@
+import { initializeAppCheckIfConfigured } from "./firebase-app-check.js";
 // ===============================
 // FIREBASE SETUP
 // ===============================
@@ -40,6 +41,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+initializeAppCheckIfConfigured(app);
 const auth = getAuth(app);
 // Initialize Firestore
 const db = getFirestore(app);
@@ -880,6 +882,7 @@ async function reserveAppointmentAndCreateTicket(appointmentData) {
             appointmentDate,
             booked: booked + 1,
             total,
+            lastAppointmentId: appointmentRef.id,
             updatedAt: serverTimestamp()
         });
 
@@ -1666,7 +1669,7 @@ function addAnswerQualityAndFeedback(messageElement, userQuestion, answer) {
             : (language === "bn" ? "একাধিক কাছাকাছি বিষয় পাওয়া গেছে। আপনার পরিস্থিতি আলাদা হলে প্রশ্নটি আরও স্পষ্ট করুন; জরুরি লক্ষণ থাকলে হাসপাতালে যান।" : "Several related topics were found. Clarify your question if your situation differs; seek urgent care for warning signs.");
         note.appendChild(caution);
     }
-    const disclosure = document.createElement("small"); disclosure.textContent = language === "bn" ? "আপনার প্রশ্ন পারফরম্যান্স বিশ্লেষণের জন্য সংরক্ষিত হতে পারে। চ্যাট ইতিহাস সংরক্ষণ আলাদা এবং ডিফল্টভাবে বন্ধ।" : "Your question may be stored for performance analytics. Local chat-history saving is separate and off by default.";
+    const disclosure = document.createElement("small"); disclosure.textContent = language === "bn" ? "সাইন-ইন করা ব্যবহারকারীর প্রশ্ন ঐচ্ছিক বিশ্লেষণের জন্য কেবল সম্মতি দিলে সংরক্ষণ করা হবে। সম্মতি ডিফল্টভাবে বন্ধ। মতামত পাঠালে সেই মতামত আলাদাভাবে সংরক্ষিত হবে।" : "For signed-in users, chatbot questions are stored for optional analytics only after opt-in (off by default). Feedback is stored when you explicitly submit it.";
     note.appendChild(disclosure); messageElement.appendChild(note);
 
     const feedback = document.createElement("div"); feedback.className = "chatbot-feedback"; feedback.setAttribute("role", "group");
@@ -2084,8 +2087,38 @@ function getDengueAnswer(message) {
 
 // Task 15: record one lightweight analytics event per submitted chatbot question.
 // The raw question is retained to calculate popular questions; no answer body is stored.
+let optionalAnalyticsConsentCache = { uid: null, enabled: false, loadedAt: 0 };
+window.addEventListener("smart-dengue:privacy-preferences-updated", event => {
+    const detail = event.detail || {};
+    if (detail.uid) {
+        optionalAnalyticsConsentCache = {
+            uid: detail.uid,
+            enabled: detail.optionalChatbotAnalytics === true,
+            loadedAt: Date.now()
+        };
+    }
+});
+
+async function hasOptionalChatbotAnalyticsConsent() {
+    const user = auth.currentUser;
+    if (!user || !user.uid) return false;
+    if (optionalAnalyticsConsentCache.uid === user.uid && Date.now() - optionalAnalyticsConsentCache.loadedAt < 30 * 1000) {
+        return optionalAnalyticsConsentCache.enabled;
+    }
+    try {
+        const preference = await getDoc(doc(db, "patient_privacy_preferences", user.uid));
+        const enabled = preference.exists() && preference.data().optionalChatbotAnalytics === true;
+        optionalAnalyticsConsentCache = { uid: user.uid, enabled, loadedAt: Date.now() };
+        return enabled;
+    } catch (error) {
+        console.warn("Privacy preference could not be verified; optional analytics remains disabled.", error.code || error.message);
+        return false;
+    }
+}
+
 async function recordChatbotQueryEvent(userQuestion) {
     try {
+        if (!(await hasOptionalChatbotAnalyticsConsent())) return;
         const matches = typeof window.getTopDengueMatches === "function"
             ? window.getTopDengueMatches(userQuestion, 15)
             : [];

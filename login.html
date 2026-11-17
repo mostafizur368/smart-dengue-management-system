@@ -177,20 +177,32 @@ const db = getFirestore(app);
         let pendingVerificationId = null;
         let mfaRecaptcha = null;
 
-        async function redirectSignedInUser(user) {
-            const userSnap = await getDoc(doc(db, "users", user.uid));
-            const role = userSnap.exists() ? String(userSnap.data().role || "user").toLowerCase() : "user";
-            const returnTo = new URLSearchParams(window.location.search).get("return");
-            if (role === "admin") window.location.href = "assets/admin/admin-dashboard.html";
-            else if (role === "doctor") window.location.href = "assets/doctor/doctor-dashboard.html";
-            else if (returnTo === "appointment") window.location.href = "index.html#doctor-list";
-            else if (role === "user" || role === "patient") {
-    window.location.href = "user-dashboard.html";
+        
+async function redirectSignedInUser(user) {
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+
+    const role = userSnap.exists()
+        ? String(userSnap.data().role || "user").toLowerCase()
+        : "user";
+
+    const returnTo = new URLSearchParams(window.location.search).get("return");
+
+    if (role === "admin") {
+        window.location.href = "assets/admin/admin-dashboard.html";
+    }
+    else if (role === "doctor") {
+        window.location.href = "assets/doctor/doctor-dashboard.html";
+    }
+    else if (returnTo === "appointment") {
+        window.location.href = "index.html#doctor-list";
+    }
+    else if (role === "user" || role === "patient") {
+        window.location.href = "index.html";
+    }
+    else {
+        window.location.href = "index.html";
+    }
 }
-else {
-    window.location.href = "index.html";
-}
-        }
 
         document.getElementById("mfa-login-send-code").addEventListener("click", async () => {
             if (!pendingResolver) return;
